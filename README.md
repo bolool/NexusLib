@@ -971,3 +971,75 @@ end
 --       RETORNAR LIBRARY
 -- ══════════════════════════════════════════
 return NexusUI
+
+
+--[[
+═══════════════════════════════════════════════════════════
+  EXEMPLO DE USO COMPLETO
+═══════════════════════════════════════════════════════════
+
+local NexusUI = loadstring(game:HttpGet("SUA_URL_AQUI"))()
+
+-- Criar janela
+local Win = NexusUI:CreateWindow({
+    Title    = "Meu Script",
+    SubTitle = "by Você • v1.0",
+    Theme    = "Dark",  -- ou "Light"
+    Size     = UDim2.new(0, 560, 0, 380),
+})
+
+-- Adicionar tabs
+local TabGeral = Win:AddTab("Geral")
+local TabPlayer = Win:AddTab("Player")
+local TabConfig = Win:AddTab("Config")
+
+-- ── Tab Geral ──
+TabGeral:AddSection("Movimentação")
+
+TabGeral:AddButton({
+    Label = "Teletransportar ao Spawn",
+    Callback = function()
+        game.Players.LocalPlayer.Character:MoveTo(Vector3.new(0, 5, 0))
+    end
+})
+
+local sprintToggle = TabGeral:AddToggle({
+    Label    = "Sprint Infinito",
+    Default  = false,
+    Callback = function(val)
+        -- sua lógica aqui
+        print("Sprint:", val)
+    end
+})
+
+local speedSlider = TabGeral:AddSlider({
+    Label   = "Velocidade",
+    Min     = 16,
+    Max     = 200,
+    Default = 16,
+    Callback = function(val)
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = val
+    end
+})
+
+-- ── Tab Player ──
+TabPlayer:AddSection("Informações")
+
+local nameInput = TabPlayer:AddInput({
+    Label       = "Display Name",
+    Placeholder = "Seu nome aqui...",
+    Callback    = function(val)
+        print("Nome:", val)
+    end
+})
+
+-- Notificação ao carregar
+NexusUI:Notify({
+    Title    = "NexusUI Carregado!",
+    Message  = "Script iniciado com sucesso. Bem-vindo!",
+    Type     = "Success",
+    Duration = 5,
+})
+
+═══════════════════════════════════════════════════════════
+--]]
