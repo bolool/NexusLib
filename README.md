@@ -6,14 +6,7 @@
     ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║    ╚██████╔╝██║
     ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝     ╚═════╝ ╚═╝
 
-    NexusUI v2.0.0  —  Modern Roblox UI Library
-
-    FIX DEFINITIVO DOS CANTOS:
-      UIStroke + ClipsDescendants no MESMO frame sempre vaza.
-      MakeRoundedFrame() cria 2 layers:
-        outer → UICorner + UIStroke, fundo transparente, SEM ClipsDescendants
-        inner → UICorner + ClipsDescendants, tem a cor de fundo, SEM UIStroke
-      Todo elemento bordado usa esse padrão — janela, notificações, cards, inputs.
+    TODOS CANTOS ARRUMADOS CRLH
 ]]
 
 local NexusUI  = {}
@@ -361,7 +354,6 @@ function NexusUI:CreateWindow(config)
         cover.Size             = UDim2.new(1, 0, 0, 8)
         cover.Position         = UDim2.new(0, 0, 1, -8)
         cover.BorderSizePixel  = 0
-        cover.ZIndex           = 2
         cover.Parent           = titleBar
     end
 
@@ -413,7 +405,7 @@ function NexusUI:CreateWindow(config)
     end
 
     -- Botões Windows-style (×  □  ─)
-    local function makeTitleBtn(sym, xOff, hoverColor)
+    local function makeTitleBtn(sym, xOff)
         local btn = Instance.new("TextButton")
         btn.BackgroundTransparency = 1
         btn.BorderSizePixel        = 0
@@ -425,19 +417,17 @@ function NexusUI:CreateWindow(config)
         btn.Font                   = Enum.Font.Gotham
         btn.Parent                 = titleBar
         btn.MouseEnter:Connect(function()
-            Tween(btn, {BackgroundTransparency=0, BackgroundColor3=hoverColor}, 0.1)
-            Tween(btn, {TextColor3=T.Text}, 0.1)
+            Tween(btn, {TextColor3 = T.Text}, 0.1)
         end)
         btn.MouseLeave:Connect(function()
-            Tween(btn, {BackgroundTransparency=1}, 0.1)
-            Tween(btn, {TextColor3=T.TextMuted}, 0.1)
+            Tween(btn, {TextColor3 = T.TextMuted}, 0.1)
         end)
         return btn
     end
 
-    local closeBtn    = makeTitleBtn("✕", -40,  Color3.fromRGB(196, 43, 28))
-    local maximizeBtn = makeTitleBtn("□", -80,  T.CardHover or Color3.fromRGB(44,44,50))
-    local minimizeBtn = makeTitleBtn("─", -120, T.CardHover or Color3.fromRGB(44,44,50))
+    local closeBtn    = makeTitleBtn("✕", -40)
+    local maximizeBtn = makeTitleBtn("□", -80)
+    local minimizeBtn = makeTitleBtn("─", -120)
 
     closeBtn.MouseButton1Click:Connect(function()
         Tween(winOuter, {Size=UDim2.new(0, winOuter.AbsoluteSize.X, 0, 0)}, 0.2)
@@ -533,6 +523,29 @@ function NexusUI:CreateWindow(config)
     contentArea.Position         = UDim2.new(0, 150, 0, 42)
     contentArea.BorderSizePixel  = 0
     contentArea.Parent           = winInner
+
+    -- UICorner para arredondar o canto inferior direito (combina com a janela)
+    do local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = contentArea end
+
+    -- Cobertura no topo: tapa o canto superior direito (fica sob a titlebar)
+    do
+        local cover = Instance.new("Frame")
+        cover.BackgroundColor3 = T.ContentBg
+        cover.Size             = UDim2.new(1, 0, 0, 8)
+        cover.Position         = UDim2.new(0, 0, 0, 0)
+        cover.BorderSizePixel  = 0
+        cover.Parent           = contentArea
+    end
+
+    -- Cobertura na esquerda: tapa o canto inferior esquerdo (fica colado na sidebar)
+    do
+        local cover = Instance.new("Frame")
+        cover.BackgroundColor3 = T.ContentBg
+        cover.Size             = UDim2.new(0, 8, 1, 0)
+        cover.Position         = UDim2.new(0, 0, 0, 0)
+        cover.BorderSizePixel  = 0
+        cover.Parent           = contentArea
+    end
 
     -- ── Objeto Window ────────────────────────────────────
     local Win          = {}
