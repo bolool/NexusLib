@@ -6,7 +6,8 @@
     ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║    ╚██████╔╝██║
     ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝     ╚═════╝ ╚═╝
 
-    NexusUI v2.0.0  —  testekey
+    NexusUI v2.0.0  — 22222
+
     FIX DEFINITIVO DOS CANTOS:
       UIStroke + ClipsDescendants no MESMO frame sempre vaza.
       MakeRoundedFrame() cria 2 layers:
@@ -625,23 +626,11 @@ function NexusUI:CreateWindow(config)
                 end)
 
                 linkHit.MouseButton1Click:Connect(function()
-                    -- Tenta abrir no browser (funciona em alguns executores)
-                    local opened = false
-                    pcall(function()
-                        game:GetService("GuiService"):OpenBrowserWindow(ksLink)
-                        opened = true
-                    end)
-
-                    -- Sempre copia pro clipboard como fallback seguro
+                    -- setclipboard é o método mais confiável em todos os executores
                     pcall(function() setclipboard(ksLink) end)
 
-                    -- Feedback
                     local prev = linkLbl.Text
-                    if opened then
-                        linkLbl.Text      = "Abrindo..."
-                    else
-                        linkLbl.Text      = "Link copiado!"
-                    end
+                    linkLbl.Text      = "Link copiado!"
                     linkLbl.TextColor3 = T.Success
                     task.delay(2, function()
                         linkLbl.Text      = prev
