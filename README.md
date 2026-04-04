@@ -223,7 +223,8 @@ function NexusUI:Notify(config)
     local message  = cfg.Message  or ""
     local duration = cfg.Duration or 4
     local ntype    = cfg.Type     or "Info"
-    local T        = Themes.Dark
+    -- Respeita o tema: "Dark" ou "Light"
+    local T        = Themes[cfg.Theme or "Dark"] or Themes.Dark
 
     local typeColor = { Info=T.Info, Success=T.Success, Warning=T.Warning, Error=T.Error }
     local accent    = typeColor[ntype] or T.Info
@@ -231,22 +232,20 @@ function NexusUI:Notify(config)
     -- outer/inner: sem vazar cantos
     local notifOuter, notifInner = MakeRoundedFrame(
         NotifContainer,
-        Color3.fromRGB(32, 32, 35),
+        T.TitleBg,
         8,
-        Color3.fromRGB(52, 52, 58),
+        T.Border,
         1
     )
     notifOuter.Size = UDim2.new(1, 0, 0, 66)
 
-    -- Barra accent lateral
+    -- Barra accent lateral (UICorner apenas uma vez)
     local bar = Instance.new("Frame")
     bar.BackgroundColor3 = accent
     bar.Size             = UDim2.new(0, 3, 1, 0)
     bar.BorderSizePixel  = 0
     bar.Parent           = notifInner
-    Instance.new("UICorner").CornerRadius = UDim.new(0,3)
-    Instance.new("UICorner").Parent = bar  -- NOTE: correct way below
-    do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,3); c.Parent=bar end
+    do local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 3); c.Parent = bar end
 
     local content = Instance.new("Frame")
     content.BackgroundTransparency = 1
@@ -352,6 +351,20 @@ function NexusUI:CreateWindow(config)
     titleBar.BorderSizePixel  = 0
     titleBar.Parent           = winInner
 
+    -- UICorner para arredondar os cantos superiores (combinam com a janela)
+    do local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = titleBar end
+
+    -- Frame de cobertura embaixo: tapa os cantos inferiores arredondados, deixando-os retos
+    do
+        local cover = Instance.new("Frame")
+        cover.BackgroundColor3 = T.TitleBg
+        cover.Size             = UDim2.new(1, 0, 0, 8)
+        cover.Position         = UDim2.new(0, 0, 1, -8)
+        cover.BorderSizePixel  = 0
+        cover.ZIndex           = 2
+        cover.Parent           = titleBar
+    end
+
     -- divisor inferior
     do
         local d = Instance.new("Frame")
@@ -359,6 +372,7 @@ function NexusUI:CreateWindow(config)
         d.Size             = UDim2.new(1, 0, 0, 1)
         d.Position         = UDim2.new(0, 0, 1, -1)
         d.BorderSizePixel  = 0
+        d.ZIndex           = 3
         d.Parent           = titleBar
     end
 
@@ -421,7 +435,7 @@ function NexusUI:CreateWindow(config)
         return btn
     end
 
-    local closeBtn    = makeTitleBtn("X", -40,  Color3.fromRGB(196, 43, 28))
+    local closeBtn    = makeTitleBtn("✕", -40,  Color3.fromRGB(196, 43, 28))
     local maximizeBtn = makeTitleBtn("□", -80,  T.CardHover or Color3.fromRGB(44,44,50))
     local minimizeBtn = makeTitleBtn("─", -120, T.CardHover or Color3.fromRGB(44,44,50))
 
@@ -463,12 +477,38 @@ function NexusUI:CreateWindow(config)
     sidebar.BorderSizePixel  = 0
     sidebar.Parent           = winInner
 
+    -- UICorner para arredondar o canto inferior esquerdo (combina com a janela)
+    do local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = sidebar end
+
+    -- Cobertura no topo: tapa os cantos superiores arredondados (o topo fica embaixo da titlebar)
+    do
+        local cover = Instance.new("Frame")
+        cover.BackgroundColor3 = T.SidebarBg
+        cover.Size             = UDim2.new(1, 0, 0, 8)
+        cover.Position         = UDim2.new(0, 0, 0, 0)
+        cover.BorderSizePixel  = 0
+        cover.ZIndex           = 2
+        cover.Parent           = sidebar
+    end
+
+    -- Cobertura na direita: tapa os cantos direitos arredondados (direita fica colada no conteúdo)
+    do
+        local cover = Instance.new("Frame")
+        cover.BackgroundColor3 = T.SidebarBg
+        cover.Size             = UDim2.new(0, 8, 1, 0)
+        cover.Position         = UDim2.new(1, -8, 0, 0)
+        cover.BorderSizePixel  = 0
+        cover.ZIndex           = 2
+        cover.Parent           = sidebar
+    end
+
     do -- divisor direito
         local d = Instance.new("Frame")
         d.BackgroundColor3 = T.Border
         d.Size             = UDim2.new(0, 1, 1, 0)
         d.Position         = UDim2.new(1, -1, 0, 0)
         d.BorderSizePixel  = 0
+        d.ZIndex           = 3
         d.Parent           = sidebar
     end
 
