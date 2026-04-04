@@ -6,7 +6,7 @@
     ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║    ╚██████╔╝██║
     ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝     ╚═════╝ ╚═╝
 
-    NexusUI v2.0.0 11
+    NexusUI v2.0.0  —  Animação
 ]]
 
 local NexusUI  = {}
@@ -558,25 +558,100 @@ function NexusUI:CreateWindow(config)
 
     MakeDraggable(pillOuter, pillInner)
 
-    local minimized = false
+    local minimized   = false
+    local animLock    = false  -- evita double-click durante animação
+
+    -- MINIMIZAR: janela encolhe para baixo (Quart In) → pill escala para cima (Back Out)
     minimizeBtn.MouseButton1Click:Connect(function()
+        if animLock then return end
+        animLock  = true
         minimized = true
-        pillOuter.Position = winOuter.Position
-        Tween(winOuter, {Size=UDim2.new(0, winOuter.AbsoluteSize.X, 0, 0)}, 0.2)
-        task.wait(0.22)
-        winOuter.Visible  = false
-        winOuter.Size     = winSize
-        pillOuter.Visible = true
+
+        -- Captura posição atual da janela para o pill aparecer no mesmo lugar
+        local startPos = winOuter.Position
+        pillOuter.Position = startPos
+
+        -- Passo 1: janela encolhe verticalmente com Quart In (rápido e firme)
+        Tween(winOuter,
+            { Size = UDim2.new(0, winOuter.AbsoluteSize.X, 0, 0) },
+            0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.In
+        )
+
+        task.delay(0.20, function()
+            winOuter.Visible = false
+            winOuter.Size    = winSize
+
+            -- Passo 2: pill aparece escalando de 0.5 → 1.0 com Back Out (leve bounce)
+            local scale = Instance.new("UIScale")
+            scale.Scale  = 0.5
+            scale.Parent = pillOuter
+
+            -- Desloca levemente para baixo e sobe junto com o scale
+            pillOuter.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset,
+                startPos.Y.Scale, startPos.Y.Offset + 6
+            )
+            pillOuter.Visible = true
+
+            Tween(scale,
+                { Scale = 1.0 },
+                0.30, Enum.EasingStyle.Back, Enum.EasingDirection.Out
+            )
+            Tween(pillOuter,
+                { Position = startPos },
+                0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.Out
+            )
+
+            task.delay(0.32, function()
+                scale:Destroy()
+                animLock = false
+            end)
+        end)
     end)
 
+    -- RESTAURAR: pill encolhe (Quart In) → janela expande do pill (Back Out)
     restoreBtn.MouseButton1Click:Connect(function()
+        if animLock then return end
+        animLock  = true
         minimized = false
+
         local pillPos = pillOuter.Position
-        pillOuter.Visible = false
-        winOuter.Position = pillPos
-        winOuter.Visible  = true
-        winOuter.Size     = UDim2.new(0, winSize.X.Offset, 0, 0)
-        Tween(winOuter, {Size=winSize}, 0.25)
+
+        -- Passo 1: pill encolhe com Quart In
+        local scale = Instance.new("UIScale")
+        scale.Scale  = 1.0
+        scale.Parent = pillOuter
+
+        Tween(scale,
+            { Scale = 0.5 },
+            0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.In
+        )
+        Tween(pillOuter,
+            { Position = UDim2.new(
+                pillPos.X.Scale, pillPos.X.Offset,
+                pillPos.Y.Scale, pillPos.Y.Offset + 6
+            )},
+            0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.In
+        )
+
+        task.delay(0.16, function()
+            pillOuter.Visible = false
+            scale:Destroy()
+
+            -- Passo 2: janela expande a partir da posição do pill com Back Out
+            winOuter.Position = pillPos
+            winOuter.Size     = UDim2.new(0, winSize.X.Offset, 0, 0)
+            winOuter.Visible  = true
+
+            Tween(winOuter,
+                { Size = winSize, Position = pillPos },
+                0.32, Enum.EasingStyle.Back, Enum.EasingDirection.Out
+            )
+
+            task.delay(0.34, function()
+                animLock = false
+            end)
+        end)
     end)
 
     local maxed, preMaxSize, preMaxPos = false, winSize, winPos
