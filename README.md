@@ -6,7 +6,7 @@
     ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║    ╚██████╔╝██║
     ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝     ╚═════╝ ╚═╝
 
-    NexusUI v2.0.0  —  Modern Roblox UI Library
+    NexusUI v2.0.0  —  Moderndsfsfddsdsdfs Roblox UI Library
 
     FIX DEFINITIVO DOS CANTOS:
       UIStroke + ClipsDescendants no MESMO frame sempre vaza.
@@ -94,62 +94,33 @@ local Themes = {
         TabHoverBg    = Color3.fromRGB(234, 234, 244),
     },
 
-    -- ── Acrylic: Windows 11, azul translúcido ────────
+    -- ── Acrylic: vidro fosco, leve e translúcido ─────
     Acrylic = {
-        WinBg         = Color3.fromRGB(32,  34,  50 ),
-        TitleBg       = Color3.fromRGB(38,  40,  60 ),
-        SidebarBg     = Color3.fromRGB(34,  36,  54 ),
-        ContentBg     = Color3.fromRGB(26,  28,  44 ),
-        Border        = Color3.fromRGB(68,  72,  100),
-        BorderSubtle  = Color3.fromRGB(52,  56,  80 ),
-        Card          = Color3.fromRGB(42,  44,  64 ),
-        CardHover     = Color3.fromRGB(52,  54,  76 ),
-        CardPress     = Color3.fromRGB(58,  56,  84 ),
-        CardBorder    = Color3.fromRGB(58,  62,  88 ),
+        WinBg         = Color3.fromRGB(52,  56,  80 ),
+        TitleBg       = Color3.fromRGB(60,  64,  92 ),
+        SidebarBg     = Color3.fromRGB(55,  59,  84 ),
+        ContentBg     = Color3.fromRGB(46,  50,  72 ),
+        Border        = Color3.fromRGB(90,  96,  132),
+        BorderSubtle  = Color3.fromRGB(72,  78,  110),
+        Card          = Color3.fromRGB(64,  68,  98 ),
+        CardHover     = Color3.fromRGB(76,  80,  114),
+        CardPress     = Color3.fromRGB(84,  88,  124),
+        CardBorder    = Color3.fromRGB(80,  86,  120),
         Accent        = Color3.fromRGB(0,   120, 215),
-        AccentText    = Color3.fromRGB(80,  170, 255),
-        AccentDim     = Color3.fromRGB(0,   50,  100),
-        Text          = Color3.fromRGB(220, 222, 235),
-        TextMuted     = Color3.fromRGB(120, 124, 155),
-        TextDisabled  = Color3.fromRGB(68,  72,  100),
+        AccentText    = Color3.fromRGB(100, 180, 255),
+        AccentDim     = Color3.fromRGB(0,   60,  120),
+        Text          = Color3.fromRGB(235, 238, 255),
+        TextMuted     = Color3.fromRGB(160, 165, 200),
+        TextDisabled  = Color3.fromRGB(100, 106, 145),
         Success       = Color3.fromRGB(52,  211, 153),
         Warning       = Color3.fromRGB(251, 191, 36 ),
         Error         = Color3.fromRGB(248, 113, 113),
         Info          = Color3.fromRGB(0,   120, 215),
         ToggleOn      = Color3.fromRGB(0,   120, 215),
-        ToggleOff     = Color3.fromRGB(56,  60,  84 ),
+        ToggleOff     = Color3.fromRGB(72,  78,  110),
         SliderThumb   = Color3.fromRGB(255, 255, 255),
-        TabActiveBg   = Color3.fromRGB(0,   70,  140),
-        TabHoverBg    = Color3.fromRGB(48,  52,  74 ),
-    },
-
-    -- ── Midnight: preto profundo, azul frio ──────────
-    Midnight = {
-        WinBg         = Color3.fromRGB(6,   8,   18 ),
-        TitleBg       = Color3.fromRGB(10,  12,  24 ),
-        SidebarBg     = Color3.fromRGB(8,   10,  20 ),
-        ContentBg     = Color3.fromRGB(4,   6,   14 ),
-        Border        = Color3.fromRGB(28,  34,  64 ),
-        BorderSubtle  = Color3.fromRGB(20,  26,  50 ),
-        Card          = Color3.fromRGB(14,  16,  32 ),
-        CardHover     = Color3.fromRGB(20,  24,  44 ),
-        CardPress     = Color3.fromRGB(28,  32,  60 ),
-        CardBorder    = Color3.fromRGB(24,  28,  52 ),
-        Accent        = Color3.fromRGB(100, 160, 255),
-        AccentText    = Color3.fromRGB(140, 190, 255),
-        AccentDim     = Color3.fromRGB(18,  38,  88 ),
-        Text          = Color3.fromRGB(210, 218, 240),
-        TextMuted     = Color3.fromRGB(95,  108, 148),
-        TextDisabled  = Color3.fromRGB(48,  56,  85 ),
-        Success       = Color3.fromRGB(52,  211, 153),
-        Warning       = Color3.fromRGB(251, 191, 36 ),
-        Error         = Color3.fromRGB(248, 113, 113),
-        Info          = Color3.fromRGB(100, 160, 255),
-        ToggleOn      = Color3.fromRGB(100, 160, 255),
-        ToggleOff     = Color3.fromRGB(28,  34,  64 ),
-        SliderThumb   = Color3.fromRGB(200, 215, 255),
-        TabActiveBg   = Color3.fromRGB(18,  38,  88 ),
-        TabHoverBg    = Color3.fromRGB(16,  20,  42 ),
+        TabActiveBg   = Color3.fromRGB(0,   80,  160),
+        TabHoverBg    = Color3.fromRGB(68,  74,  106),
     },
 
     -- ── Rose: escuro quente, accent rosa ─────────────
