@@ -6,6 +6,14 @@
     ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║    ╚██████╔╝██║
     ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝     ╚═════╝ ╚═╝
 
+    NexusUI v2.0.0  —  Modern Roblox UI Library
+
+    FIX DEFINITIVO DOS CANTOS:
+      UIStroke + ClipsDescendants no MESMO frame sempre vaza.
+      MakeRoundedFrame() cria 2 layers:
+        outer → UICorner + UIStroke, fundo transparente, SEM ClipsDescendants
+        inner → UICorner + ClipsDescendants, tem a cor de fundo, SEM UIStroke
+      Todo elemento bordado usa esse padrão — janela, notificações, cards, inputs.
 ]]
 
 local NexusUI  = {}
@@ -994,10 +1002,8 @@ function NexusUI:CreateWindow(config)
 
             if query ~= "" then
                 -- Navega ao vivo para a primeira tab com resultado
-                if firstVisible then
-                    if Win._activeTab ~= firstVisible then
-                        firstVisible._btn.MouseButton1Click:Fire()
-                    end
+                if firstVisible and Win._activeTab ~= firstVisible then
+                    firstVisible._activate()
                 end
             else
                 -- Pesquisa limpa: restaura todos os elementos e tabs
@@ -1194,8 +1200,8 @@ function NexusUI:CreateWindow(config)
         tab._theme     = T
         tab._elements  = {}   -- {label=string, frame=Frame} para pesquisa
 
-        -- Troca de tab
-        btn.MouseButton1Click:Connect(function()
+        -- Função de ativação — usada pelo clique E pela pesquisa
+        local function activateTab()
             if Win._activeTab == tab then return end
             if Win._activeTab then
                 local p = Win._activeTab
@@ -1214,7 +1220,12 @@ function NexusUI:CreateWindow(config)
             scroll.Visible  = true
             Win._activeTab  = tab
             updateScrollbar(scroll)
-        end)
+        end
+
+        tab._activate = activateTab   -- expõe para a pesquisa
+
+        -- Troca de tab por clique
+        btn.MouseButton1Click:Connect(activateTab)
 
         btn.MouseEnter:Connect(function()
             if Win._activeTab == tab then return end
