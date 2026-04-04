@@ -6,12 +6,6 @@
     ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║    ╚██████╔╝██║
     ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝     ╚═════╝ ╚═╝
 
-    NexusUI v2.0.0  —  adasasdas
-      UIStroke + ClipsDescendants no MESMO frame sempre vaza.
-      MakeRoundedFrame() cria 2 layers:
-        outer → UICorner + UIStroke, fundo transparente, SEM ClipsDescendants
-        inner → UICorner + ClipsDescendants, tem a cor de fundo, SEM UIStroke
-      Todo elemento bordado usa esse padrão — janela, notificações, cards, inputs.
 ]]
 
 local NexusUI  = {}
@@ -999,14 +993,14 @@ function NexusUI:CreateWindow(config)
             noResultsLbl.Visible = (query ~= "" and not anyTabVisible)
 
             if query ~= "" then
-                -- Navega ao vivo: se a tab ativa não tem resultados, vai para a primeira com match
-                if firstVisible and not Win._activeTab._btn.Visible then
-                    firstVisible._btn.MouseButton1Click:Fire()
-                -- Se a tab ativa AINDA tem resultados, mantém ela (não troca desnecessariamente)
-                -- mas se firstVisible é diferente e tem resultados mais relevantes, deixa o usuário decidir
+                -- Navega ao vivo para a primeira tab com resultado
+                if firstVisible then
+                    if Win._activeTab ~= firstVisible then
+                        firstVisible._btn.MouseButton1Click:Fire()
+                    end
                 end
             else
-                -- Pesquisa limpa: mostra todos os elementos de todas as tabs
+                -- Pesquisa limpa: restaura todos os elementos e tabs
                 for _, t in ipairs(Win._tabs) do
                     t._btn.Visible = true
                     for _, el in ipairs(t._elements) do
