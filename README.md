@@ -35,33 +35,37 @@ local Mouse            = LP:GetMouse()
 --  TEMAS
 -- ═══════════════════════════════════════════════════
 local Themes = {
+
+    -- ── Dark: neutro, sem detalhes roxo ─────────────
     Dark = {
-        WinBg         = Color3.fromRGB(28,  28,  30 ),
-        TitleBg       = Color3.fromRGB(32,  32,  35 ),
-        SidebarBg     = Color3.fromRGB(30,  30,  33 ),
-        ContentBg     = Color3.fromRGB(24,  24,  26 ),
-        Border        = Color3.fromRGB(52,  52,  58 ),
-        BorderSubtle  = Color3.fromRGB(42,  42,  46 ),
-        Card          = Color3.fromRGB(36,  36,  40 ),
-        CardHover     = Color3.fromRGB(44,  44,  50 ),
-        CardPress     = Color3.fromRGB(48,  46,  72 ),
-        CardBorder    = Color3.fromRGB(50,  50,  56 ),
-        Accent        = Color3.fromRGB(99,  102, 241),
-        AccentText    = Color3.fromRGB(150, 152, 255),
-        AccentDim     = Color3.fromRGB(38,  38,  76 ),
-        Text          = Color3.fromRGB(218, 218, 222),
-        TextMuted     = Color3.fromRGB(118, 118, 130),
-        TextDisabled  = Color3.fromRGB(62,  62,  70 ),
+        WinBg         = Color3.fromRGB(22,  22,  24 ),
+        TitleBg       = Color3.fromRGB(28,  28,  30 ),
+        SidebarBg     = Color3.fromRGB(24,  24,  26 ),
+        ContentBg     = Color3.fromRGB(18,  18,  20 ),
+        Border        = Color3.fromRGB(48,  48,  52 ),
+        BorderSubtle  = Color3.fromRGB(38,  38,  42 ),
+        Card          = Color3.fromRGB(32,  32,  35 ),
+        CardHover     = Color3.fromRGB(40,  40,  44 ),
+        CardPress     = Color3.fromRGB(50,  50,  56 ),
+        CardBorder    = Color3.fromRGB(46,  46,  50 ),
+        Accent        = Color3.fromRGB(220, 220, 228),
+        AccentText    = Color3.fromRGB(200, 200, 210),
+        AccentDim     = Color3.fromRGB(42,  42,  48 ),
+        Text          = Color3.fromRGB(220, 220, 226),
+        TextMuted     = Color3.fromRGB(110, 110, 118),
+        TextDisabled  = Color3.fromRGB(58,  58,  64 ),
         Success       = Color3.fromRGB(52,  211, 153),
         Warning       = Color3.fromRGB(251, 191, 36 ),
         Error         = Color3.fromRGB(248, 113, 113),
-        Info          = Color3.fromRGB(99,  102, 241),
-        ToggleOn      = Color3.fromRGB(99,  102, 241),
-        ToggleOff     = Color3.fromRGB(52,  52,  60 ),
-        SliderThumb   = Color3.fromRGB(255, 255, 255),  -- branco no dark
-        TabActiveBg   = Color3.fromRGB(38,  38,  76 ),
-        TabHoverBg    = Color3.fromRGB(40,  40,  46 ),
+        Info          = Color3.fromRGB(180, 180, 195),
+        ToggleOn      = Color3.fromRGB(180, 180, 195),
+        ToggleOff     = Color3.fromRGB(48,  48,  56 ),
+        SliderThumb   = Color3.fromRGB(255, 255, 255),
+        TabActiveBg   = Color3.fromRGB(38,  38,  44 ),
+        TabHoverBg    = Color3.fromRGB(34,  34,  38 ),
     },
+
+    -- ── Light: branco limpo ──────────────────────────
     Light = {
         WinBg         = Color3.fromRGB(250, 250, 252),
         TitleBg       = Color3.fromRGB(244, 244, 248),
@@ -85,9 +89,96 @@ local Themes = {
         Info          = Color3.fromRGB(79,  70,  229),
         ToggleOn      = Color3.fromRGB(79,  70,  229),
         ToggleOff     = Color3.fromRGB(200, 200, 215),
-        SliderThumb   = Color3.fromRGB(28,  28,  35 ),  -- escuro no light
+        SliderThumb   = Color3.fromRGB(28,  28,  35 ),
         TabActiveBg   = Color3.fromRGB(220, 218, 255),
         TabHoverBg    = Color3.fromRGB(234, 234, 244),
+    },
+
+    -- ── Acrylic: Windows 11, azul translúcido ────────
+    Acrylic = {
+        WinBg         = Color3.fromRGB(32,  34,  50 ),
+        TitleBg       = Color3.fromRGB(38,  40,  60 ),
+        SidebarBg     = Color3.fromRGB(34,  36,  54 ),
+        ContentBg     = Color3.fromRGB(26,  28,  44 ),
+        Border        = Color3.fromRGB(68,  72,  100),
+        BorderSubtle  = Color3.fromRGB(52,  56,  80 ),
+        Card          = Color3.fromRGB(42,  44,  64 ),
+        CardHover     = Color3.fromRGB(52,  54,  76 ),
+        CardPress     = Color3.fromRGB(58,  56,  84 ),
+        CardBorder    = Color3.fromRGB(58,  62,  88 ),
+        Accent        = Color3.fromRGB(0,   120, 215),
+        AccentText    = Color3.fromRGB(80,  170, 255),
+        AccentDim     = Color3.fromRGB(0,   50,  100),
+        Text          = Color3.fromRGB(220, 222, 235),
+        TextMuted     = Color3.fromRGB(120, 124, 155),
+        TextDisabled  = Color3.fromRGB(68,  72,  100),
+        Success       = Color3.fromRGB(52,  211, 153),
+        Warning       = Color3.fromRGB(251, 191, 36 ),
+        Error         = Color3.fromRGB(248, 113, 113),
+        Info          = Color3.fromRGB(0,   120, 215),
+        ToggleOn      = Color3.fromRGB(0,   120, 215),
+        ToggleOff     = Color3.fromRGB(56,  60,  84 ),
+        SliderThumb   = Color3.fromRGB(255, 255, 255),
+        TabActiveBg   = Color3.fromRGB(0,   70,  140),
+        TabHoverBg    = Color3.fromRGB(48,  52,  74 ),
+    },
+
+    -- ── Midnight: preto profundo, azul frio ──────────
+    Midnight = {
+        WinBg         = Color3.fromRGB(6,   8,   18 ),
+        TitleBg       = Color3.fromRGB(10,  12,  24 ),
+        SidebarBg     = Color3.fromRGB(8,   10,  20 ),
+        ContentBg     = Color3.fromRGB(4,   6,   14 ),
+        Border        = Color3.fromRGB(28,  34,  64 ),
+        BorderSubtle  = Color3.fromRGB(20,  26,  50 ),
+        Card          = Color3.fromRGB(14,  16,  32 ),
+        CardHover     = Color3.fromRGB(20,  24,  44 ),
+        CardPress     = Color3.fromRGB(28,  32,  60 ),
+        CardBorder    = Color3.fromRGB(24,  28,  52 ),
+        Accent        = Color3.fromRGB(100, 160, 255),
+        AccentText    = Color3.fromRGB(140, 190, 255),
+        AccentDim     = Color3.fromRGB(18,  38,  88 ),
+        Text          = Color3.fromRGB(210, 218, 240),
+        TextMuted     = Color3.fromRGB(95,  108, 148),
+        TextDisabled  = Color3.fromRGB(48,  56,  85 ),
+        Success       = Color3.fromRGB(52,  211, 153),
+        Warning       = Color3.fromRGB(251, 191, 36 ),
+        Error         = Color3.fromRGB(248, 113, 113),
+        Info          = Color3.fromRGB(100, 160, 255),
+        ToggleOn      = Color3.fromRGB(100, 160, 255),
+        ToggleOff     = Color3.fromRGB(28,  34,  64 ),
+        SliderThumb   = Color3.fromRGB(200, 215, 255),
+        TabActiveBg   = Color3.fromRGB(18,  38,  88 ),
+        TabHoverBg    = Color3.fromRGB(16,  20,  42 ),
+    },
+
+    -- ── Rose: escuro quente, accent rosa ─────────────
+    Rose = {
+        WinBg         = Color3.fromRGB(22,  16,  20 ),
+        TitleBg       = Color3.fromRGB(28,  20,  26 ),
+        SidebarBg     = Color3.fromRGB(24,  18,  22 ),
+        ContentBg     = Color3.fromRGB(18,  13,  17 ),
+        Border        = Color3.fromRGB(60,  40,  52 ),
+        BorderSubtle  = Color3.fromRGB(46,  32,  42 ),
+        Card          = Color3.fromRGB(32,  24,  30 ),
+        CardHover     = Color3.fromRGB(42,  30,  38 ),
+        CardPress     = Color3.fromRGB(54,  36,  48 ),
+        CardBorder    = Color3.fromRGB(50,  36,  46 ),
+        Accent        = Color3.fromRGB(236, 72,  128),
+        AccentText    = Color3.fromRGB(255, 128, 170),
+        AccentDim     = Color3.fromRGB(90,  22,  48 ),
+        Text          = Color3.fromRGB(240, 220, 230),
+        TextMuted     = Color3.fromRGB(148, 110, 128),
+        TextDisabled  = Color3.fromRGB(78,  58,  70 ),
+        Success       = Color3.fromRGB(52,  211, 153),
+        Warning       = Color3.fromRGB(251, 191, 36 ),
+        Error         = Color3.fromRGB(248, 113, 113),
+        Info          = Color3.fromRGB(236, 72,  128),
+        ToggleOn      = Color3.fromRGB(236, 72,  128),
+        ToggleOff     = Color3.fromRGB(58,  40,  52 ),
+        SliderThumb   = Color3.fromRGB(255, 200, 220),
+        TabActiveBg   = Color3.fromRGB(80,  20,  44 ),
+        TabHoverBg    = Color3.fromRGB(42,  28,  36 ),
     },
 }
 
@@ -507,7 +598,7 @@ function NexusUI:CreateWindow(config)
         do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,10); c.Parent=iconOuter end
         do
             local s=Instance.new("UIStroke")
-            s.Color=T.Accent; s.Thickness=1.5
+            s.Color=Color3.fromRGB(15,15,15); s.Thickness=1.5
             s.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
             s.Parent=iconOuter
         end
