@@ -6,7 +6,11 @@
     ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║    ╚██████╔╝██║
     ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝     ╚═════╝ ╚═╝
 
-    NexusUI v2.0.0  —  sddsdsdadsadsadsaasts, tem a cor de fundo, SEM UIStroke
+    NexusUI v2.0.0  —  adasasdas
+      UIStroke + ClipsDescendants no MESMO frame sempre vaza.
+      MakeRoundedFrame() cria 2 layers:
+        outer → UICorner + UIStroke, fundo transparente, SEM ClipsDescendants
+        inner → UICorner + ClipsDescendants, tem a cor de fundo, SEM UIStroke
       Todo elemento bordado usa esse padrão — janela, notificações, cards, inputs.
 ]]
 
@@ -812,20 +816,10 @@ function NexusUI:CreateWindow(config)
         sOuter.Position = UDim2.new(0, 8, 0, 8)
         sOuter.ZIndex   = 4
 
-        local lupaLbl = Instance.new("TextLabel")
-        lupaLbl.BackgroundTransparency = 1
-        lupaLbl.Size       = UDim2.new(0, 20, 1, 0)
-        lupaLbl.Position   = UDim2.new(0, 6, 0, 0)
-        lupaLbl.Text       = "o/"
-        lupaLbl.TextColor3 = T.TextDisabled
-        lupaLbl.TextSize   = 10
-        lupaLbl.Font       = Enum.Font.GothamBold
-        lupaLbl.Parent     = sInner
-
         searchBox = Instance.new("TextBox")
         searchBox.BackgroundTransparency = 1
-        searchBox.Size              = UDim2.new(1, -26, 1, 0)
-        searchBox.Position          = UDim2.new(0, 24, 0, 0)
+        searchBox.Size              = UDim2.new(1, -12, 1, 0)
+        searchBox.Position          = UDim2.new(0, 8, 0, 0)
         searchBox.PlaceholderText   = "Pesquisar..."
         searchBox.PlaceholderColor3 = T.TextDisabled
         searchBox.Text              = ""
@@ -1004,9 +998,21 @@ function NexusUI:CreateWindow(config)
 
             noResultsLbl.Visible = (query ~= "" and not anyTabVisible)
 
-            -- Se a tab ativa ficou oculta, ativa a primeira visível com resultado
-            if query ~= "" and firstVisible and not Win._activeTab._btn.Visible then
-                firstVisible._btn.MouseButton1Click:Fire()
+            if query ~= "" then
+                -- Navega ao vivo: se a tab ativa não tem resultados, vai para a primeira com match
+                if firstVisible and not Win._activeTab._btn.Visible then
+                    firstVisible._btn.MouseButton1Click:Fire()
+                -- Se a tab ativa AINDA tem resultados, mantém ela (não troca desnecessariamente)
+                -- mas se firstVisible é diferente e tem resultados mais relevantes, deixa o usuário decidir
+                end
+            else
+                -- Pesquisa limpa: mostra todos os elementos de todas as tabs
+                for _, t in ipairs(Win._tabs) do
+                    t._btn.Visible = true
+                    for _, el in ipairs(t._elements) do
+                        if el.frame then el.frame.Visible = true end
+                    end
+                end
             end
         end)
     end
