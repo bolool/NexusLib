@@ -6,7 +6,7 @@
     ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║    ╚██████╔╝██║
     ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝     ╚═════╝ ╚═╝
 
-    TODOS CANTOS ARRUMADOS CRLH
+    FALTA AS NOTIFICAÇÕES
 ]]
 
 local NexusUI  = {}
@@ -425,8 +425,8 @@ function NexusUI:CreateWindow(config)
         return btn
     end
 
-    local closeBtn    = makeTitleBtn("✕", -40)
-    local maximizeBtn = makeTitleBtn("□", -80)
+    local closeBtn    = makeTitleBtn("X", -40)
+    local maximizeBtn = makeTitleBtn("✕", -80)
     local minimizeBtn = makeTitleBtn("─", -120)
 
     closeBtn.MouseButton1Click:Connect(function()
@@ -459,7 +459,7 @@ function NexusUI:CreateWindow(config)
 
     MakeDraggable(winOuter, titleBar)
 
-    -- ── Sidebar ─────────────────────────────────────────
+    
     local sidebar = Instance.new("Frame")
     sidebar.BackgroundColor3 = T.SidebarBg
     sidebar.Size             = UDim2.new(0, 150, 1, -42)
@@ -467,10 +467,10 @@ function NexusUI:CreateWindow(config)
     sidebar.BorderSizePixel  = 0
     sidebar.Parent           = winInner
 
-    -- UICorner para arredondar o canto inferior esquerdo (combina com a janela)
+    
     do local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = sidebar end
 
-    -- Cobertura no topo: tapa os cantos superiores arredondados (o topo fica embaixo da titlebar)
+    
     do
         local cover = Instance.new("Frame")
         cover.BackgroundColor3 = T.SidebarBg
@@ -481,7 +481,7 @@ function NexusUI:CreateWindow(config)
         cover.Parent           = sidebar
     end
 
-    -- Cobertura na direita: tapa os cantos direitos arredondados (direita fica colada no conteúdo)
+    
     do
         local cover = Instance.new("Frame")
         cover.BackgroundColor3 = T.SidebarBg
@@ -492,7 +492,7 @@ function NexusUI:CreateWindow(config)
         cover.Parent           = sidebar
     end
 
-    do -- divisor direito
+    do 
         local d = Instance.new("Frame")
         d.BackgroundColor3 = T.Border
         d.Size             = UDim2.new(0, 1, 1, 0)
@@ -516,7 +516,7 @@ function NexusUI:CreateWindow(config)
     tabLayout.Padding   = UDim.new(0, 3)
     tabLayout.Parent    = tabScroll
 
-    -- ── Content Area ────────────────────────────────────
+   
     local contentArea = Instance.new("Frame")
     contentArea.BackgroundColor3 = T.ContentBg
     contentArea.Size             = UDim2.new(1, -150, 1, -42)
@@ -524,10 +524,10 @@ function NexusUI:CreateWindow(config)
     contentArea.BorderSizePixel  = 0
     contentArea.Parent           = winInner
 
-    -- UICorner para arredondar o canto inferior direito (combina com a janela)
+    
     do local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = contentArea end
 
-    -- Cobertura no topo: tapa o canto superior direito (fica sob a titlebar)
+    
     do
         local cover = Instance.new("Frame")
         cover.BackgroundColor3 = T.ContentBg
@@ -537,7 +537,7 @@ function NexusUI:CreateWindow(config)
         cover.Parent           = contentArea
     end
 
-    -- Cobertura na esquerda: tapa o canto inferior esquerdo (fica colado na sidebar)
+    
     do
         local cover = Instance.new("Frame")
         cover.BackgroundColor3 = T.ContentBg
@@ -562,7 +562,7 @@ function NexusUI:CreateWindow(config)
         local iconId  = resolveIcon(icon)
         local isFirst = (#self._tabs == 0)
 
-        -- Botão sidebar
+        
         local btn = Instance.new("TextButton")
         btn.BackgroundColor3       = isFirst and T.TabActiveBg or Color3.fromRGB(0,0,0)
         btn.BackgroundTransparency = isFirst and 0 or 1
@@ -572,7 +572,7 @@ function NexusUI:CreateWindow(config)
         btn.Parent                 = tabScroll
         do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,6); c.Parent=btn end
 
-        -- Indicador
+        
         local indicator = Instance.new("Frame")
         indicator.BackgroundColor3       = T.Accent
         indicator.Size                   = UDim2.new(0, 3, 0, 16)
@@ -582,7 +582,6 @@ function NexusUI:CreateWindow(config)
         indicator.Parent                 = btn
         do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,3); c.Parent=indicator end
 
-        -- Ícone (opcional)
         local iconImg
         local lblOffX = 10
         if iconId then
@@ -627,7 +626,6 @@ function NexusUI:CreateWindow(config)
             sl.Parent    = scroll
         end
 
-        -- Cabeçalho (nome da tab em destaque, estilo Fluent)
         do
             local h = Instance.new("TextLabel")
             h.BackgroundTransparency = 1
@@ -960,7 +958,6 @@ function NexusUI:CreateWindow(config)
                 lt.Parent=inner
             end
 
-            -- input box: também usa MakeRoundedFrame para borda correta
             local boxOuter, boxInner = MakeRoundedFrame(inner, T.ContentBg, 5, T.Border, 1)
             boxOuter.Size     = UDim2.new(1,-16,0,24)
             boxOuter.Position = UDim2.new(0,8,0,28)
@@ -1000,14 +997,12 @@ function NexusUI:CreateWindow(config)
         end
 
         return tab
-    end -- AddTab
+    end
 
     return Win
-end -- CreateWindow
+end 
 
--- ═══════════════════════════════════════════════════
 return NexusUI
--- ═══════════════════════════════════════════════════
 
 
 --[[
