@@ -391,8 +391,249 @@ end
 -- ═══════════════════════════════════════════════════
 --  CRIAR JANELA
 -- ═══════════════════════════════════════════════════
+--  KEY SYSTEM
+-- ═══════════════════════════════════════════════════
 function NexusUI:CreateWindow(config)
-    local cfg       = config or {}
+    local cfg        = config or {}
+    local keyEnabled = cfg.KeySystem == true
+    local keySettings = cfg.KeySettings or {}
+
+    -- Se KeySystem estiver ativo, mostra a tela de key antes de tudo
+    if keyEnabled then
+        local ks         = keySettings
+        local ksTitle    = ks.Title    or "Key System"
+        local ksSub      = ks.Subtitle or "Digite sua key para continuar"
+        local ksNote     = ks.Note     or "Consulte o criador do script para obter a key."
+        local ksFile     = ks.FileName or "NexusKey"
+        local ksSave     = ks.SaveKey  ~= false
+        local ksFromSite = ks.GrabKeyFromSite == true
+        local ksKeys     = ks.Key or {}
+        local themeName  = cfg.Theme or "Dark"
+        local T          = Themes[themeName] or Themes.Dark
+
+        -- Retorna uma promise-like: bloqueia até key ser validada
+        local validated = false
+
+        -- Verifica se já existe key salva
+        local savedKey = ""
+        if ksSave then
+            pcall(function()
+                if isfile and isfile(ksFile .. ".txt") then
+                    savedKey = readfile(ksFile .. ".txt")
+                end
+            end)
+        end
+
+        -- Função que valida uma key contra a lista (strings ou URLs)
+        local function validateKey(input)
+            input = input:match("^%s*(.-)%s*$") -- trim
+            if input == "" then return false end
+
+            for _, k in ipairs(ksKeys) do
+                if ksFromSite then
+                    -- Busca conteúdo da URL e compara
+                    local ok, content = pcall(function()
+                        return game:HttpGet(k)
+                    end)
+                    if ok and content then
+                        local trimmed = content:match("^%s*(.-)%s*$")
+                        if trimmed == input then return true end
+                    end
+                else
+                    -- Comparação direta
+                    if k == input then return true end
+                end
+            end
+            return false
+        end
+
+        -- Tenta validar key salva automaticamente
+        if savedKey ~= "" and validateKey(savedKey) then
+            validated = true
+        end
+
+        if not validated then
+            -- Monta a tela de key
+            local keyOuter, keyInner = MakeRoundedFrame(ScreenGui, T.WinBg, 8, T.Border, 1)
+            keyOuter.Name     = "NexusKeyScreen"
+            keyOuter.Size     = UDim2.new(0, 400, 0, 240)
+            keyOuter.Position = UDim2.new(0.5, -200, 0.5, -120)
+            keyOuter.ZIndex   = 10
+
+            -- Faixa de título
+            local keyTitleBar = Instance.new("Frame")
+            keyTitleBar.BackgroundColor3 = T.TitleBg
+            keyTitleBar.Size             = UDim2.new(1, 0, 0, 44)
+            keyTitleBar.BorderSizePixel  = 0
+            keyTitleBar.ZIndex           = 10
+            keyTitleBar.Parent           = keyInner
+            do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,8); c.Parent=keyTitleBar end
+            do
+                local cover=Instance.new("Frame")
+                cover.BackgroundColor3=T.TitleBg; cover.Size=UDim2.new(1,0,0,8)
+                cover.Position=UDim2.new(0,0,1,-8); cover.BorderSizePixel=0; cover.ZIndex=11
+                cover.Parent=keyTitleBar
+            end
+            do
+                local div=Instance.new("Frame")
+                div.BackgroundColor3=T.Border; div.Size=UDim2.new(1,0,0,1)
+                div.Position=UDim2.new(0,0,1,-1); div.BorderSizePixel=0; div.ZIndex=12
+                div.Parent=keyTitleBar
+            end
+
+            -- Pill accent
+            do
+                local pill=Instance.new("Frame")
+                pill.BackgroundColor3=T.Accent; pill.Size=UDim2.new(0,3,0,20)
+                pill.Position=UDim2.new(0,14,0.5,-10); pill.BorderSizePixel=0
+                pill.ZIndex=11; pill.Parent=keyTitleBar
+                local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,3); c.Parent=pill
+            end
+
+            -- Título e subtítulo
+            do
+                local tl=Instance.new("TextLabel")
+                tl.BackgroundTransparency=1; tl.Size=UDim2.new(1,-20,0,16)
+                tl.Position=UDim2.new(0,24,0,7); tl.Text=ksTitle
+                tl.TextColor3=T.Text; tl.TextSize=14; tl.Font=Enum.Font.GothamBold
+                tl.TextXAlignment=Enum.TextXAlignment.Left; tl.ZIndex=11; tl.Parent=keyTitleBar
+            end
+            do
+                local sl=Instance.new("TextLabel")
+                sl.BackgroundTransparency=1; sl.Size=UDim2.new(1,-20,0,13)
+                sl.Position=UDim2.new(0,24,0,26); sl.Text=ksSub
+                sl.TextColor3=T.TextMuted; sl.TextSize=11; sl.Font=Enum.Font.Gotham
+                sl.TextXAlignment=Enum.TextXAlignment.Left; sl.ZIndex=11; sl.Parent=keyTitleBar
+            end
+
+            -- Corpo
+            local body = Instance.new("Frame")
+            body.BackgroundTransparency=1; body.Size=UDim2.new(1,0,1,-44)
+            body.Position=UDim2.new(0,0,0,44); body.ZIndex=10; body.Parent=keyInner
+            AddPadding(body, 16, 16, 20, 20)
+
+            local bodyLayout=Instance.new("UIListLayout")
+            bodyLayout.SortOrder=Enum.SortOrder.LayoutOrder
+            bodyLayout.Padding=UDim.new(0,10); bodyLayout.Parent=body
+
+            -- Nota
+            local noteLbl=Instance.new("TextLabel")
+            noteLbl.BackgroundTransparency=1; noteLbl.Size=UDim2.new(1,0,0,0)
+            noteLbl.AutomaticSize=Enum.AutomaticSize.Y
+            noteLbl.Text=ksNote; noteLbl.TextColor3=T.TextMuted
+            noteLbl.TextSize=11; noteLbl.Font=Enum.Font.Gotham
+            noteLbl.TextXAlignment=Enum.TextXAlignment.Left
+            noteLbl.TextWrapped=true; noteLbl.LayoutOrder=1; noteLbl.ZIndex=11
+            noteLbl.Parent=body
+
+            -- Input da key
+            local inputOuter, inputInner = MakeRoundedFrame(body, T.Card, 6, T.Border, 1)
+            inputOuter.Size=UDim2.new(1,0,0,32); inputOuter.LayoutOrder=2
+
+            local keyBox=Instance.new("TextBox")
+            keyBox.BackgroundTransparency=1; keyBox.Size=UDim2.new(1,-16,1,0)
+            keyBox.Position=UDim2.new(0,8,0,0)
+            keyBox.PlaceholderText="Digite sua key aqui..."
+            keyBox.PlaceholderColor3=T.TextDisabled
+            keyBox.Text=""; keyBox.TextColor3=T.Text; keyBox.TextSize=12
+            keyBox.Font=Enum.Font.Gotham
+            keyBox.TextXAlignment=Enum.TextXAlignment.Left
+            keyBox.ClearTextOnFocus=false; keyBox.ZIndex=12; keyBox.Parent=inputInner
+
+            local inputStroke=inputOuter:FindFirstChildOfClass("UIStroke")
+            keyBox.Focused:Connect(function()
+                if inputStroke then Tween(inputStroke,{Color=T.Accent},0.15) end
+            end)
+            keyBox.FocusLost:Connect(function()
+                if inputStroke then Tween(inputStroke,{Color=T.Border},0.15) end
+            end)
+
+            -- Mensagem de erro
+            local errLbl=Instance.new("TextLabel")
+            errLbl.BackgroundTransparency=1; errLbl.Size=UDim2.new(1,0,0,14)
+            errLbl.Text=""; errLbl.TextColor3=T.Error; errLbl.TextSize=11
+            errLbl.Font=Enum.Font.Gotham; errLbl.TextXAlignment=Enum.TextXAlignment.Left
+            errLbl.LayoutOrder=3; errLbl.ZIndex=11; errLbl.Parent=body
+
+            -- Botão confirmar
+            local btnOuter, btnInner = MakeRoundedFrame(body, T.Accent, 6, nil, 0)
+            btnOuter.Size=UDim2.new(1,0,0,32); btnOuter.LayoutOrder=4
+
+            local btnLbl=Instance.new("TextLabel")
+            btnLbl.BackgroundTransparency=1; btnLbl.Size=UDim2.new(1,0,1,0)
+            btnLbl.Text="Confirmar"; btnLbl.TextColor3=Color3.fromRGB(255,255,255)
+            btnLbl.TextSize=13; btnLbl.Font=Enum.Font.GothamBold; btnLbl.ZIndex=12
+            btnLbl.Parent=btnInner
+
+            local btnHit=Instance.new("TextButton")
+            btnHit.BackgroundTransparency=1; btnHit.Size=UDim2.new(1,0,1,0)
+            btnHit.Text=""; btnHit.ZIndex=13; btnHit.Parent=btnInner
+
+            btnHit.MouseEnter:Connect(function()
+                Tween(btnInner,{BackgroundColor3=T.AccentText},0.12)
+            end)
+            btnHit.MouseLeave:Connect(function()
+                Tween(btnInner,{BackgroundColor3=T.Accent},0.12)
+            end)
+
+            -- Lógica de validação no clique
+            local function tryValidate()
+                local input = keyBox.Text
+                -- Feedback visual: loading
+                btnLbl.Text = "Verificando..."
+
+                task.spawn(function()
+                    local ok = validateKey(input)
+                    if ok then
+                        -- Salva key se configurado
+                        if ksSave then
+                            pcall(function()
+                                if writefile then
+                                    writefile(ksFile .. ".txt", input)
+                                end
+                            end)
+                        end
+                        -- Animação de sucesso e fecha
+                        errLbl.Text = ""
+                        btnLbl.Text = "Confirmado!"
+                        Tween(btnInner, {BackgroundColor3=T.Success}, 0.2)
+                        task.wait(0.6)
+                        Tween(keyOuter, {Size=UDim2.new(0,400,0,0)}, 0.22)
+                        task.wait(0.24)
+                        keyOuter:Destroy()
+                        validated = true
+                    else
+                        -- Shake + mensagem de erro
+                        errLbl.Text = "Key incorreta. Tente novamente."
+                        btnLbl.Text = "Confirmar"
+                        Tween(btnInner, {BackgroundColor3=T.Error}, 0.1)
+                        task.wait(0.15)
+                        Tween(btnInner, {BackgroundColor3=T.Accent}, 0.2)
+                        -- Mini shake no input
+                        local origPos = inputOuter.Position
+                        for i = 1, 3 do
+                            Tween(inputOuter, {Position=UDim2.new(origPos.X.Scale, origPos.X.Offset+5, origPos.Y.Scale, origPos.Y.Offset)}, 0.05)
+                            task.wait(0.05)
+                            Tween(inputOuter, {Position=UDim2.new(origPos.X.Scale, origPos.X.Offset-5, origPos.Y.Scale, origPos.Y.Offset)}, 0.05)
+                            task.wait(0.05)
+                        end
+                        Tween(inputOuter, {Position=origPos}, 0.05)
+                    end
+                end)
+            end
+
+            btnHit.MouseButton1Click:Connect(tryValidate)
+            -- Enter também confirma
+            keyBox.FocusLost:Connect(function(enter)
+                if enter then tryValidate() end
+            end)
+
+            -- Aguarda validação antes de continuar
+            repeat task.wait(0.1) until validated
+        end
+    end
+
+    -- ── A partir daqui: lógica original do CreateWindow ──
     local title     = cfg.Title    or "NexusUI"
     local subtitle  = cfg.SubTitle or ""
     local themeName = cfg.Theme    or "Dark"
@@ -1572,58 +1813,104 @@ return NexusUI
 
 local NexusUI = loadstring(game:HttpGet("SUA_URL"))()
 
-print(NexusUI.Version)  --> "v2.0.0"
-
+-- ── Exemplo SEM key system ───────────────────────────
 local Win = NexusUI:CreateWindow({
-    Title    = "Meu Script",
-    SubTitle = "by você",          -- texto simples
-    Icon     = "rbxassetid://...", -- ícone no pill (opcional)
-    Theme    = "Dark",             -- "Dark" ou "Light"
-    Size     = UDim2.new(0, 580, 0, 400),
+    Title      = "Meu Script",
+    SubTitle   = "by você " .. NexusUI.Version,
+    Icon       = "rbxassetid://...",
+    Theme      = "Dark",
+    SearchBox  = true,
+    KeySystem  = false,
 })
 
--- Tags visuais na titlebar (aparecem ao lado do subtítulo)
-Win:AddTag(NexusUI.Version)   -- exibe "v2.0.0" em badge
-Win:AddTag("beta")            -- exibe "beta" em badge
-
--- Tabs: aceita rbxassetid://, só número, ou nil
-local TabGeral  = Win:AddTab("Geral",  "rbxassetid://3926305904")
-local TabPlayer = Win:AddTab("Player", "4483345998")
-local TabConfig = Win:AddTab("Config")
-
-TabGeral:AddSection("Movimentação")
-
-TabGeral:AddButton({
-    Label = "Teletransportar ao Spawn",
-    Callback = function()
-        game.Players.LocalPlayer.Character:MoveTo(Vector3.new(0,5,0))
-    end
+-- ── Exemplo COM key system (strings diretas) ─────────
+local Win = NexusUI:CreateWindow({
+    Title     = "Meu Script",
+    SubTitle  = "by você " .. NexusUI.Version,
+    Theme     = "Dark",
+    KeySystem = true,
+    KeySettings = {
+        Title    = "Verificação",
+        Subtitle = "Digite sua key para continuar",
+        Note     = "Acesse nosso Discord para obter a key.",
+        FileName = "MeuScriptKey",
+        SaveKey  = true,
+        GrabKeyFromSite = false,
+        Key = {"minhakey123", "keyalternativa"},
+    },
 })
 
-TabGeral:AddToggle({
-    Label = "Sprint Infinito", Default = false,
-    Callback = function(v) print("Sprint:", v) end
+-- ── Exemplo COM key vindo de site (Pastebin/GitHub) ──
+local Win = NexusUI:CreateWindow({
+    Title     = "Meu Script",
+    Theme     = "Dark",
+    KeySystem = true,
+    KeySettings = {
+        Title    = "Verificação",
+        Subtitle = "Key System",
+        Note     = "Acesse nosso Discord para obter a key.",
+        FileName = "MeuScriptKey",
+        SaveKey  = true,
+        GrabKeyFromSite = true,
+        -- Cole aqui a URL RAW do seu site/pastebin/github:
+        Key = {"https://pastebin.com/raw/XXXXXXXX"},
+    },
 })
 
-TabGeral:AddSlider({
-    Label = "Velocidade", Min = 16, Max = 200, Default = 16,
-    Callback = function(v)
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
-    end
-})
-
-TabPlayer:AddSection("Informações")
-TabPlayer:AddInput({
-    Label = "Display Name", Placeholder = "Seu nome...",
-    Callback = function(v) print("Nome:", v) end
-})
+Win:AddTag("beta")
+local Tab = Win:AddTab("Geral", "rbxassetid://3926305904")
+Tab:AddSection("Movimentação")
+Tab:AddButton({ Label = "TP Spawn", Callback = function() end })
 
 NexusUI:Notify({
-    Title = "NexusUI " .. NexusUI.Version,
-    Message = "Bem-vindo. Script ativo.",
-    Type = "Success",
-    Duration = 5,
+    Title   = "NexusUI " .. NexusUI.Version,
+    Message = "Script ativo.",
+    Type    = "Success",
+    Duration = 4,
 })
+
+═══════════════════════════════════════════════════════
+  GUIA: COMO USAR KEY VIA SITE
+═══════════════════════════════════════════════════════
+
+OPÇÃO 1 — PASTEBIN (mais fácil):
+  1. Acesse https://pastebin.com e crie uma conta
+  2. Clique em "New Paste"
+  3. No campo de texto, escreva APENAS a key, ex:
+         minhakey2024
+  4. Em "Paste Expiration" escolha "Never"
+  5. Clique em "Create New Paste"
+  6. Na página do paste, clique em "Raw" (botão no topo)
+  7. Copie a URL — ela será algo como:
+         https://pastebin.com/raw/AbCdEfGh
+  8. Cole essa URL no campo Key:
+         Key = {"https://pastebin.com/raw/AbCdEfGh"}
+  9. Ative GrabKeyFromSite = true
+  10. Para mudar a key: edite o paste no Pastebin.
+      Usuários com a key antiga não conseguirão mais entrar.
+
+OPÇÃO 2 — GITHUB GIST (mais profissional):
+  1. Acesse https://gist.github.com (precisa de conta GitHub)
+  2. Crie um novo gist com um arquivo, ex: "key.txt"
+  3. No conteúdo escreva APENAS a key
+  4. Clique em "Create secret gist"
+  5. Clique em "Raw" para ver a URL pura
+  6. Use essa URL no campo Key
+
+DICA — MÚLTIPLAS KEYS VIA SITE:
+  Você pode colocar várias URLs, cada uma com uma key diferente.
+  Útil para dar keys individuais para usuários:
+    Key = {
+        "https://pastebin.com/raw/key_usuario1",
+        "https://pastebin.com/raw/key_usuario2",
+    }
+
+DICA — SaveKey:
+  Com SaveKey = true, a key válida fica salva no PC do usuário
+  em um arquivo .txt. Na próxima vez que ele abrir o script,
+  a key é lida e validada automaticamente — sem precisar digitar.
+  Se você mudar a key no site, o arquivo salvo fica inválido
+  e o usuário terá que digitar a nova key.
 
 ═══════════════════════════════════════════════════════
 --]]
