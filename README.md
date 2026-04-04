@@ -6,7 +6,14 @@
     ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║    ╚██████╔╝██║
     ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝     ╚═════╝ ╚═╝
 
-    NexusUI v2.0.0  — 123
+    NexusUI v2.0.0  —  Moder5454n Roblox UI Library
+
+    FIX DEFINITIVO DOS CANTOS:
+      UIStroke + ClipsDescendants no MESMO frame sempre vaza.
+      MakeRoundedFrame() cria 2 layers:
+        outer → UICorner + UIStroke, fundo transparente, SEM ClipsDescendants
+        inner → UICorner + ClipsDescendants, tem a cor de fundo, SEM UIStroke
+      Todo elemento bordado usa esse padrão — janela, notificações, cards, inputs.
 ]]
 
 local NexusUI  = {}
@@ -497,7 +504,7 @@ function NexusUI:CreateWindow(config)
         iconOuter.BorderSizePixel        = 0
         iconOuter.LayoutOrder            = 1
         iconOuter.Parent                 = pillContent
-        do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,7); c.Parent=iconOuter end
+        do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,10); c.Parent=iconOuter end
         do
             local s=Instance.new("UIStroke")
             s.Color=T.Accent; s.Thickness=1.5
@@ -512,7 +519,7 @@ function NexusUI:CreateWindow(config)
         iconInner.BorderSizePixel  = 0
         iconInner.ClipsDescendants = true
         iconInner.Parent           = iconOuter
-        do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,7); c.Parent=iconInner end
+        do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,10); c.Parent=iconInner end
 
         -- Gradiente diagonal (claro → escuro)
         do
