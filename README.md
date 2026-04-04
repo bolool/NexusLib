@@ -6,11 +6,12 @@
     ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║    ╚██████╔╝██║
     ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝     ╚═════╝ ╚═╝
 
-    nova 
+    receba
 ]]
 
 local NexusUI  = {}
 NexusUI.__index = NexusUI
+NexusUI.Version = "v2.0.0"  -- Atualize aqui para mudar em toda a lib
 
 -- ═══════════════════════════════════════════════════
 --  SERVIÇOS
@@ -324,10 +325,11 @@ end
 function NexusUI:CreateWindow(config)
     local cfg       = config or {}
     local title     = cfg.Title    or "NexusUI"
-    local subtitle  = cfg.SubTitle or "v2.0"
+    local subtitle  = cfg.SubTitle or ""
     local themeName = cfg.Theme    or "Dark"
     local winSize   = cfg.Size     or UDim2.new(0, 580, 0, 400)
     local winPos    = cfg.Position or UDim2.new(0.5, -290, 0.5, -200)
+    local winIcon   = resolveIcon(cfg.Icon)   -- ícone opcional (aparece no pill)
     local T         = Themes[themeName] or Themes.Dark
 
     -- ── Janela: outer (stroke) / inner (clip) ──────────
@@ -337,19 +339,14 @@ function NexusUI:CreateWindow(config)
     winOuter.Position = winPos
 
     -- ── TitleBar ────────────────────────────────────────
-    -- Dentro do winInner = já clipado pelo UICorner do inner.
-    -- NÃO precisa de UICorner próprio (os cantos superiores
-    -- serão arredondados pelo clip do pai).
     local titleBar = Instance.new("Frame")
     titleBar.BackgroundColor3 = T.TitleBg
-    titleBar.Size             = UDim2.new(1, 0, 0, 42)
+    titleBar.Size             = UDim2.new(1, 0, 0, 48)
     titleBar.BorderSizePixel  = 0
     titleBar.Parent           = winInner
 
-    -- UICorner para arredondar os cantos superiores (combinam com a janela)
+    -- UICorner nos cantos superiores + cover embaixo para quadrar os inferiores
     do local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = titleBar end
-
-    -- Frame de cobertura embaixo: tapa os cantos inferiores arredondados, deixando-os retos
     do
         local cover = Instance.new("Frame")
         cover.BackgroundColor3 = T.TitleBg
@@ -370,21 +367,22 @@ function NexusUI:CreateWindow(config)
         d.Parent           = titleBar
     end
 
-    -- Pill accent
+    -- Pill accent esquerdo
     do
         local pill = Instance.new("Frame")
         pill.BackgroundColor3 = T.Accent
-        pill.Size             = UDim2.new(0, 3, 0, 20)
-        pill.Position         = UDim2.new(0, 14, 0.5, -10)
+        pill.Size             = UDim2.new(0, 3, 0, 22)
+        pill.Position         = UDim2.new(0, 14, 0.5, -11)
         pill.BorderSizePixel  = 0
         pill.Parent           = titleBar
         local c = Instance.new("UICorner"); c.CornerRadius=UDim.new(0,3); c.Parent=pill
     end
 
+    -- Título
     do
         local tl = Instance.new("TextLabel")
         tl.BackgroundTransparency = 1
-        tl.Size           = UDim2.new(0, 220, 0, 18)
+        tl.Size           = UDim2.new(0, 260, 0, 18)
         tl.Position       = UDim2.new(0, 24, 0, 7)
         tl.Text           = title
         tl.TextColor3     = T.Text
@@ -393,20 +391,39 @@ function NexusUI:CreateWindow(config)
         tl.TextXAlignment = Enum.TextXAlignment.Left
         tl.Parent         = titleBar
     end
-    do
+
+    -- Linha do subtítulo + tags (horizontal, row)
+    local subRow = Instance.new("Frame")
+    subRow.BackgroundTransparency = 1
+    subRow.Size                   = UDim2.new(1, -140, 0, 16)
+    subRow.Position               = UDim2.new(0, 24, 0, 28)
+    subRow.ClipsDescendants       = true
+    subRow.Parent                 = titleBar
+
+    local subLayout = Instance.new("UIListLayout")
+    subLayout.FillDirection  = Enum.FillDirection.Horizontal
+    subLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    subLayout.SortOrder      = Enum.SortOrder.LayoutOrder
+    subLayout.Padding        = UDim.new(0, 6)
+    subLayout.Parent         = subRow
+
+    -- Texto do subtítulo
+    if subtitle ~= "" then
         local sl = Instance.new("TextLabel")
         sl.BackgroundTransparency = 1
-        sl.Size           = UDim2.new(0, 220, 0, 13)
-        sl.Position       = UDim2.new(0, 24, 0, 26)
+        sl.Size           = UDim2.new(0, 0, 1, 0)
+        sl.AutomaticSize  = Enum.AutomaticSize.X
         sl.Text           = subtitle
         sl.TextColor3     = T.TextMuted
         sl.TextSize       = 11
         sl.Font           = Enum.Font.Gotham
         sl.TextXAlignment = Enum.TextXAlignment.Left
-        sl.Parent         = titleBar
+        sl.LayoutOrder    = 0
+        sl.Parent         = subRow
     end
 
-    -- Botões Windows-style (×  □  ─)
+    -- Botões da titlebar — ASCII puro para garantir renderização no Roblox
+    -- "X" = fechar, "-" = minimizar, "[ ]" = maximizar
     local function makeTitleBtn(sym, xOff)
         local btn = Instance.new("TextButton")
         btn.BackgroundTransparency = 1
@@ -416,20 +433,16 @@ function NexusUI:CreateWindow(config)
         btn.Text                   = sym
         btn.TextColor3             = T.TextMuted
         btn.TextSize               = 13
-        btn.Font                   = Enum.Font.Gotham
+        btn.Font                   = Enum.Font.GothamBold
         btn.Parent                 = titleBar
-        btn.MouseEnter:Connect(function()
-            Tween(btn, {TextColor3 = T.Text}, 0.1)
-        end)
-        btn.MouseLeave:Connect(function()
-            Tween(btn, {TextColor3 = T.TextMuted}, 0.1)
-        end)
+        btn.MouseEnter:Connect(function()  Tween(btn,{TextColor3=T.Text},0.1) end)
+        btn.MouseLeave:Connect(function()  Tween(btn,{TextColor3=T.TextMuted},0.1) end)
         return btn
     end
 
-    local closeBtn    = makeTitleBtn("✕", -40)
-    local maximizeBtn = makeTitleBtn("□", -80)
-    local minimizeBtn = makeTitleBtn("─", -120)
+    local closeBtn    = makeTitleBtn("X",   -40)
+    local maximizeBtn = makeTitleBtn("[ ]", -80)
+    local minimizeBtn = makeTitleBtn("-",   -124)
 
     closeBtn.MouseButton1Click:Connect(function()
         Tween(winOuter, {Size=UDim2.new(0, winOuter.AbsoluteSize.X, 0, 0)}, 0.2)
@@ -437,29 +450,53 @@ function NexusUI:CreateWindow(config)
         winOuter:Destroy()
     end)
 
-    -- ── Pill de minimizado (aparece no lugar da janela) ──
-    local pillOuter, pillInner = MakeRoundedFrame(ScreenGui, T.TitleBg, 18, T.Border, 1)
-    pillOuter.Size    = UDim2.new(0, 220, 0, 38)
+    -- ── Pill de minimizado ──────────────────────────────
+    -- Raio 8px (menos redondo), suporte a ícone, botão ASCII
+    local pillW = winIcon and 240 or 210
+    local pillOuter, pillInner = MakeRoundedFrame(ScreenGui, T.TitleBg, 8, T.Border, 1)
+    pillOuter.Size     = UDim2.new(0, pillW, 0, 38)
     pillOuter.Position = winPos
     pillOuter.Visible  = false
 
-    -- Bloco accent esquerdo
-    do
+    local pillContentX = 12  -- cursor de posicionamento horizontal
+
+    -- Ícone da comunidade (opcional)
+    if winIcon then
+        local iconFrame = Instance.new("Frame")
+        iconFrame.BackgroundColor3 = T.AccentDim
+        iconFrame.Size             = UDim2.new(0, 26, 0, 26)
+        iconFrame.Position         = UDim2.new(0, pillContentX, 0.5, -13)
+        iconFrame.BorderSizePixel  = 0
+        iconFrame.Parent           = pillInner
+        do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,6); c.Parent=iconFrame end
+
+        local iconImg = Instance.new("ImageLabel")
+        iconImg.BackgroundTransparency = 1
+        iconImg.Size       = UDim2.new(1,0,1,0)
+        iconImg.Image      = winIcon
+        iconImg.ScaleType  = Enum.ScaleType.Fit
+        iconImg.Parent     = iconFrame
+
+        pillContentX = pillContentX + 32
+    else
+        -- Sem ícone: barra accent pequena
         local ab = Instance.new("Frame")
         ab.BackgroundColor3 = T.Accent
-        ab.Size             = UDim2.new(0, 4, 1, -12)
-        ab.Position         = UDim2.new(0, 10, 0.5, -((38-12)/2))
+        ab.Size             = UDim2.new(0, 3, 0, 20)
+        ab.Position         = UDim2.new(0, pillContentX, 0.5, -10)
         ab.BorderSizePixel  = 0
         ab.Parent           = pillInner
-        local c = Instance.new("UICorner"); c.CornerRadius=UDim.new(0,2); c.Parent=ab
+        do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,2); c.Parent=ab end
+        pillContentX = pillContentX + 10
     end
 
+    -- Texto do pill: "Título - v2.0.0"
     do
         local pt = Instance.new("TextLabel")
         pt.BackgroundTransparency = 1
-        pt.Size           = UDim2.new(1, -60, 1, 0)
-        pt.Position       = UDim2.new(0, 22, 0, 0)
-        pt.Text           = title .. " · " .. subtitle
+        pt.Size           = UDim2.new(1, -(pillContentX + 36), 1, 0)
+        pt.Position       = UDim2.new(0, pillContentX, 0, 0)
+        pt.Text           = title .. "  " .. NexusUI.Version
         pt.TextColor3     = T.Text
         pt.TextSize       = 12
         pt.Font           = Enum.Font.GothamBold
@@ -468,18 +505,18 @@ function NexusUI:CreateWindow(config)
         pt.Parent         = pillInner
     end
 
-    -- Botão de restaurar
+    -- Botão restaurar: "[+]" em ASCII puro — sem problemas de renderização
     local restoreBtn = Instance.new("TextButton")
     restoreBtn.BackgroundTransparency = 1
     restoreBtn.Size       = UDim2.new(0, 32, 1, 0)
     restoreBtn.Position   = UDim2.new(1, -34, 0, 0)
-    restoreBtn.Text       = "⤢"
+    restoreBtn.Text       = "[+]"
     restoreBtn.TextColor3 = T.TextMuted
-    restoreBtn.TextSize   = 14
-    restoreBtn.Font       = Enum.Font.Gotham
+    restoreBtn.TextSize   = 11
+    restoreBtn.Font       = Enum.Font.GothamBold
     restoreBtn.Parent     = pillInner
-    restoreBtn.MouseEnter:Connect(function() Tween(restoreBtn,{TextColor3=T.Text},0.1) end)
-    restoreBtn.MouseLeave:Connect(function() Tween(restoreBtn,{TextColor3=T.TextMuted},0.1) end)
+    restoreBtn.MouseEnter:Connect(function()  Tween(restoreBtn,{TextColor3=T.Text},0.1) end)
+    restoreBtn.MouseLeave:Connect(function()  Tween(restoreBtn,{TextColor3=T.TextMuted},0.1) end)
 
     MakeDraggable(pillOuter, pillInner)
 
@@ -524,8 +561,8 @@ function NexusUI:CreateWindow(config)
     -- ── Sidebar ─────────────────────────────────────────
     local sidebar = Instance.new("Frame")
     sidebar.BackgroundColor3 = T.SidebarBg
-    sidebar.Size             = UDim2.new(0, 150, 1, -42)
-    sidebar.Position         = UDim2.new(0, 0, 0, 42)
+    sidebar.Size             = UDim2.new(0, 150, 1, -48)
+    sidebar.Position         = UDim2.new(0, 0, 0, 48)
     sidebar.BorderSizePixel  = 0
     sidebar.Parent           = winInner
 
@@ -581,8 +618,8 @@ function NexusUI:CreateWindow(config)
     -- ── Content Area ────────────────────────────────────
     local contentArea = Instance.new("Frame")
     contentArea.BackgroundColor3 = T.ContentBg
-    contentArea.Size             = UDim2.new(1, -150, 1, -42)
-    contentArea.Position         = UDim2.new(0, 150, 0, 42)
+    contentArea.Size             = UDim2.new(1, -150, 1, -48)
+    contentArea.Position         = UDim2.new(0, 150, 0, 48)
     contentArea.BorderSizePixel  = 0
     contentArea.Parent           = winInner
 
@@ -615,6 +652,54 @@ function NexusUI:CreateWindow(config)
     Win._tabs          = {}
     Win._activeTab     = nil
     Win._outer         = winOuter
+    Win._subRow        = subRow    -- linha do subtítulo (para AddTag)
+    Win._tagCount      = 0         -- contador de tags para LayoutOrder
+
+    -- ── ADD TAG ──────────────────────────────────────────
+    -- Cria um badge visual na área do subtítulo da titlebar.
+    -- Uso: Win:AddTag("beta")  ou  Win:AddTag(NexusUI.Version)
+    function Win:AddTag(text)
+        self._tagCount = self._tagCount + 1
+
+        -- Frame externo: borda + corner (sem clip)
+        local tagOuter = Instance.new("Frame")
+        tagOuter.BackgroundTransparency = 1
+        tagOuter.Size                   = UDim2.new(0, 0, 1, -2)
+        tagOuter.AutomaticSize          = Enum.AutomaticSize.X
+        tagOuter.LayoutOrder            = self._tagCount
+        tagOuter.Parent                 = self._subRow
+
+        do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,4); c.Parent=tagOuter end
+        do
+            local s=Instance.new("UIStroke")
+            s.Color=T.Accent; s.Thickness=1
+            s.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+            s.Parent=tagOuter
+        end
+
+        -- Frame interno: fundo + clip
+        local tagInner = Instance.new("Frame")
+        tagInner.BackgroundColor3 = T.AccentDim
+        tagInner.Size             = UDim2.new(1, 0, 1, 0)
+        tagInner.ClipsDescendants = true
+        tagInner.BorderSizePixel  = 0
+        tagInner.Parent           = tagOuter
+        do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,4); c.Parent=tagInner end
+        AddPadding(tagInner, 1, 1, 5, 5)
+
+        local tagLabel = Instance.new("TextLabel")
+        tagLabel.BackgroundTransparency = 1
+        tagLabel.Size           = UDim2.new(0, 0, 1, 0)
+        tagLabel.AutomaticSize  = Enum.AutomaticSize.X
+        tagLabel.Text           = text
+        tagLabel.TextColor3     = T.AccentText
+        tagLabel.TextSize       = 10
+        tagLabel.Font           = Enum.Font.GothamBold
+        tagLabel.TextXAlignment = Enum.TextXAlignment.Left
+        tagLabel.Parent         = tagInner
+
+        return tagOuter
+    end
 
     -- ════════════════════════════════════════
     --  ADD TAB
@@ -1079,12 +1164,19 @@ return NexusUI
 
 local NexusUI = loadstring(game:HttpGet("SUA_URL"))()
 
+print(NexusUI.Version)  --> "v2.0.0"
+
 local Win = NexusUI:CreateWindow({
     Title    = "Meu Script",
-    SubTitle = "by você • v2.0",
-    Theme    = "Dark",
+    SubTitle = "by você",          -- texto simples
+    Icon     = "rbxassetid://...", -- ícone no pill (opcional)
+    Theme    = "Dark",             -- "Dark" ou "Light"
     Size     = UDim2.new(0, 580, 0, 400),
 })
+
+-- Tags visuais na titlebar (aparecem ao lado do subtítulo)
+Win:AddTag(NexusUI.Version)   -- exibe "v2.0.0" em badge
+Win:AddTag("beta")            -- exibe "beta" em badge
 
 -- Tabs: aceita rbxassetid://, só número, ou nil
 local TabGeral  = Win:AddTab("Geral",  "rbxassetid://3926305904")
@@ -1119,7 +1211,7 @@ TabPlayer:AddInput({
 })
 
 NexusUI:Notify({
-    Title = "NexusUI Carregado!",
+    Title = "NexusUI " .. NexusUI.Version,
     Message = "Bem-vindo. Script ativo.",
     Type = "Success",
     Duration = 5,
