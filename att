@@ -483,25 +483,19 @@ function NexusUI:CreateWindow(config)
         local themeName  = cfg.Theme or "Dark"
         local T          = Themes[themeName] or Themes.Dark
 
-        -- Resolve o KeyLink e extrai o código puro do Discord se for invite
-        local ksLink     = nil
-        local ksDiscord  = nil   -- só o código (ex: "FTbPM62G"), usado no RPC
+        -- Resolve o KeyLink — usa o valor direto, sem nenhuma conversão
+        local ksLink    = nil
+        local ksDiscord = nil
         if ks.KeyLink then
             local raw = tostring(ks.KeyLink):match("^%s*(.-)%s*$")
-
-            -- Extrai código do convite (discord.gg/CODE ou discord.com/invite/CODE ou só CODE)
-            local code = raw:match("discord%.gg/([%w%-]+)")
-                      or raw:match("discord%.com/invite/([%w%-]+)")
-
-            if code then
-                ksDiscord = code:sub(1, 32)
-                ksLink    = "https://discord.gg/" .. ksDiscord
-            elseif not raw:match("^https?://") and not raw:match("%.") then
-                -- Parece um código puro (sem http e sem ponto), assume Discord
-                ksDiscord = raw:sub(1, 32)
-                ksLink    = "https://discord.gg/" .. ksDiscord
+            -- Detecta código Discord APENAS se o usuário explicitamente usar discord.gg/
+            local discordCode = raw:match("^discord%.gg/([%w%-]+)")
+                             or raw:match("^discord%.com/invite/([%w%-]+)")
+            if discordCode then
+                ksDiscord = discordCode
+                ksLink    = "https://discord.gg/" .. discordCode
             else
-                -- Link normal (site, pastebin, etc.)
+                -- Qualquer outro valor: usa direto (URL, link, texto)
                 ksLink = raw
             end
         end
@@ -3096,6 +3090,6 @@ function NexusUI:CreateWindow(config)
     end -- AddTab
 
     return Win
-end -- CreateWindowadasas
+end -- CreateWindow
 
 return NexusUI
