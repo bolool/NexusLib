@@ -1523,40 +1523,44 @@ function NexusUI:CreateWindow(config)
     saveHit.MouseLeave:Connect(function() Tween(saveInner,{BackgroundColor3=T.Accent},0.12) end)
     saveHit.MouseButton1Click:Connect(function()
         -- Salva no arquivo
-        local saved = false
         pcall(function()
             if writefile then
                 writefile(settingsFile, HttpService:JSONEncode({
                     theme   = pendingTheme,
                     keybind = tostring(currentKeybind.Name),
                 }))
-                saved = true
             end
         end)
 
-        -- Animação de feedback: "Salvo!" + verde
+        -- Animação de feedback
         saveLblBtn.Text = "Salvo!"
         Tween(saveInner, {BackgroundColor3=T.Success}, 0.15)
+        task.delay(1.5, function()
+            saveLblBtn.Text = "Salvar"
+            Tween(saveInner, {BackgroundColor3=T.Accent}, 0.2)
+        end)
 
         -- Notificação
-        NexusUI:Notify({
-            Title    = "Configurações salvas",
-            Message  = "Tema: " .. pendingTheme .. " | Tecla: " .. currentKeybind.Name,
-            Type     = "Success",
-            Duration = 3,
-        })
+        if pendingTheme ~= themeName then
+            NexusUI:Notify({
+                Title    = "Configurações salvas",
+                Message  = "Tema \"" .. pendingTheme .. "\" será aplicado na próxima execução.",
+                Type     = "Info",
+                Duration = 4,
+            })
+        else
+            NexusUI:Notify({
+                Title    = "Configurações salvas",
+                Message  = "Tecla: " .. currentKeybind.Name,
+                Type     = "Success",
+                Duration = 3,
+            })
+        end
 
-        -- Aguarda feedback e recria com novo tema
-        task.delay(1, function()
-            saveLblBtn.Text = "Salvar e aplicar"
-            Tween(saveInner, {BackgroundColor3=T.Accent}, 0.2)
-            task.wait(0.3)
-            -- Destrói janela e pill
-            winOuter:Destroy()
-            pcall(function() pillOuter:Destroy() end)
-            -- Recria — CreateWindow vai ler o tema do arquivo salvo
-            NexusUI:CreateWindow(cfg)
-        end)
+        -- Fecha o painel
+        settingsOpen = false
+        settingsOuter.Visible = false
+        Tween(gearBtn, {ImageColor3=T.TextMuted}, 0.15)
     end)
 
     -- Sync altura do painel
@@ -2908,6 +2912,6 @@ function NexusUI:CreateWindow(config)
     end -- AddTab
 
     return Win
-end -- CreateWindow
+end -- CreateWindowf
 
 return NexusUI
