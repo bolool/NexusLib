@@ -260,12 +260,11 @@ function NexusUI:Notify(config)
     local typeColor = { Info=T.Info, Success=T.Success, Warning=T.Warning, Error=T.Error }
     local accent    = typeColor[ntype] or T.Info
 
-    -- Outer: stroke + corner, sem clip
+    -- Container raiz (sem AutomaticSize, sem clip — só posicionamento)
     local notifOuter = Instance.new("Frame")
     notifOuter.BackgroundTransparency = 1
-    notifOuter.Size                   = UDim2.new(1, 0, 0, 0)
-    notifOuter.AutomaticSize          = Enum.AutomaticSize.Y
     notifOuter.BorderSizePixel        = 0
+    notifOuter.Size                   = UDim2.new(1, 0, 0, 0)  -- altura definida depois
     notifOuter.Parent                 = NotifContainer
     do
         local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = notifOuter
@@ -277,42 +276,40 @@ function NexusUI:Notify(config)
         s.Parent = notifOuter
     end
 
-    -- Inner: fundo + clip + corner
+    -- Inner: fundo + clip (altura também definida depois, igual ao outer)
     local notifInner = Instance.new("Frame")
     notifInner.BackgroundColor3 = T.TitleBg
     notifInner.BorderSizePixel  = 0
-    notifInner.Size             = UDim2.new(1, 0, 0, 0)
-    notifInner.AutomaticSize    = Enum.AutomaticSize.Y
+    notifInner.Size             = UDim2.new(1, 0, 1, 0)
     notifInner.ClipsDescendants = true
     notifInner.Parent           = notifOuter
     do
         local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = notifInner
     end
 
-    -- Barra accent lateral: altura fixa grande, o clip do inner corta certinho
+    -- Barra accent lateral — agora funciona porque o pai terá altura fixa
     local bar = Instance.new("Frame")
     bar.BackgroundColor3 = accent
-    bar.Size             = UDim2.new(0, 3, 0, 999)  -- clip do inner corta a altura
     bar.BorderSizePixel  = 0
-    bar.ZIndex           = 2
+    bar.Size             = UDim2.new(0, 3, 1, 0)
     bar.Parent           = notifInner
 
-    -- Conteúdo (ao lado da barra)
+    -- Área de conteúdo (AutomaticSize APENAS aqui — não afeta o outer)
     local content = Instance.new("Frame")
     content.BackgroundTransparency = 1
     content.BorderSizePixel        = 0
-    content.Size                   = UDim2.new(1, -3, 0, 0)
     content.Position               = UDim2.new(0, 3, 0, 0)
+    content.Size                   = UDim2.new(1, -3, 0, 0)
     content.AutomaticSize          = Enum.AutomaticSize.Y
     content.Parent                 = notifInner
-    AddPadding(content, 10, 10, 12, 12)
+    AddPadding(content, 10, 8, 12, 12)
 
-    local layout = Instance.new("UIListLayout")
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding   = UDim.new(0, 4)
-    layout.Parent    = content
+    local lay = Instance.new("UIListLayout")
+    lay.SortOrder = Enum.SortOrder.LayoutOrder
+    lay.Padding   = UDim.new(0, 4)
+    lay.Parent    = content
 
-    -- Linha do título (ícone customizado opcional + texto)
+    -- Linha do título
     local titleRow = Instance.new("Frame")
     titleRow.BackgroundTransparency = 1
     titleRow.BorderSizePixel        = 0
@@ -320,22 +317,22 @@ function NexusUI:Notify(config)
     titleRow.LayoutOrder            = 1
     titleRow.Parent                 = content
 
-    local titleOffsetX = 0
+    local titleOffX = 0
     if iconId then
         local img = Instance.new("ImageLabel")
         img.BackgroundTransparency = 1
-        img.Size       = UDim2.new(0, 14, 0, 14)
-        img.Position   = UDim2.new(0, 0, 0.5, -7)
-        img.Image      = iconId
-        img.ScaleType  = Enum.ScaleType.Fit
-        img.Parent     = titleRow
-        titleOffsetX = 20
+        img.Size      = UDim2.new(0, 14, 0, 14)
+        img.Position  = UDim2.new(0, 0, 0.5, -7)
+        img.Image     = iconId
+        img.ScaleType = Enum.ScaleType.Fit
+        img.Parent    = titleRow
+        titleOffX = 20
     end
 
     local titleLbl = Instance.new("TextLabel")
     titleLbl.BackgroundTransparency = 1
-    titleLbl.Size           = UDim2.new(1, -titleOffsetX, 1, 0)
-    titleLbl.Position       = UDim2.new(0, titleOffsetX, 0, 0)
+    titleLbl.Size           = UDim2.new(1, -titleOffX, 1, 0)
+    titleLbl.Position       = UDim2.new(0, titleOffX, 0, 0)
     titleLbl.Text           = title
     titleLbl.TextColor3     = T.Text
     titleLbl.TextSize       = 13
@@ -360,7 +357,7 @@ function NexusUI:Notify(config)
         msgLbl.Parent         = content
     end
 
-    -- Progress bar
+    -- Progress bar track
     local pgTrack = Instance.new("Frame")
     pgTrack.BackgroundColor3 = T.BorderSubtle
     pgTrack.BorderSizePixel  = 0
@@ -374,7 +371,17 @@ function NexusUI:Notify(config)
     pgFill.Size             = UDim2.new(1, 0, 1, 0)
     pgFill.Parent           = pgTrack
 
-    -- Entrada: slide da direita com Back Out
+    -- Sincroniza a altura do outer/inner com o content (depois do layout render)
+    local function syncHeight()
+        local h = content.AbsoluteSize.Y
+        if h > 0 then
+            notifOuter.Size = UDim2.new(1, 0, 0, h)
+        end
+    end
+    content:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncHeight)
+    task.defer(syncHeight)
+
+    -- Animação de entrada
     notifOuter.Position = UDim2.new(0.08, 0, 0, 0)
     Tween(notifOuter, { Position = UDim2.new(0, 0, 0, 0) }, 0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
     Tween(pgFill, { Size = UDim2.new(0, 0, 1, 0) }, duration, Enum.EasingStyle.Linear)
