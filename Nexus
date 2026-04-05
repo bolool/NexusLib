@@ -287,22 +287,15 @@ function NexusUI:Notify(config)
         local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = notifInner
     end
 
-    -- Barra accent lateral — agora funciona porque o pai terá altura fixa
-    local bar = Instance.new("Frame")
-    bar.BackgroundColor3 = accent
-    bar.BorderSizePixel  = 0
-    bar.Size             = UDim2.new(0, 3, 1, 0)
-    bar.Parent           = notifInner
-
-    -- Área de conteúdo (AutomaticSize APENAS aqui — não afeta o outer)
+    -- Conteúdo (sem barra lateral)
     local content = Instance.new("Frame")
     content.BackgroundTransparency = 1
     content.BorderSizePixel        = 0
-    content.Position               = UDim2.new(0, 3, 0, 0)
-    content.Size                   = UDim2.new(1, -3, 0, 0)
+    content.Position               = UDim2.new(0, 0, 0, 0)
+    content.Size                   = UDim2.new(1, 0, 0, 0)
     content.AutomaticSize          = Enum.AutomaticSize.Y
     content.Parent                 = notifInner
-    AddPadding(content, 10, 8, 12, 12)
+    AddPadding(content, 10, 8, 14, 14)
 
     local lay = Instance.new("UIListLayout")
     lay.SortOrder = Enum.SortOrder.LayoutOrder
