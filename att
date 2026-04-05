@@ -822,16 +822,26 @@ function NexusUI:CreateWindow(config)
 
     local title      = cfg.Title    or "NexusUI"
     local subtitle   = cfg.SubTitle or ""
-    local winSize    = cfg.Size     or UDim2.new(0, 580, 0, 400)
-    local winPos     = cfg.Position or UDim2.new(0.5, -290, 0.5, -200)
-    local winIconRaw = cfg.Icon  -- guardamos o raw para applyIcon resolver Lucide
+    local winSize    = cfg.Size       or UDim2.new(0, 580, 0, 400)
+    local winPos     = cfg.Position   or UDim2.new(0.5, -290, 0.5, -200)
+    local winIconRaw = cfg.Icon
     local showSearch = cfg.SearchBox ~= false
 
-    -- Carrega tema salvo (sobrescreve cfg.Theme se existir arquivo)
-    local settingsFile = "NexusUI_Settings.json"
-    local HttpService  = game:GetService("HttpService")
-    local savedTheme   = cfg.Theme or "Dark"
-    local savedKbName  = "RightShift"
+    -- Pasta de save configurável — cada hub usa o próprio nome para não conflitar
+    local saveFolder = cfg.SaveFolder and tostring(cfg.SaveFolder):match("^%s*(.-)%s*$") or "NexusUI"
+    local settingsFile = saveFolder .. "/settings.json"
+
+    -- Garante que a pasta existe
+    pcall(function()
+        if isfolder and not isfolder(saveFolder) then
+            if makefolder then makefolder(saveFolder) end
+        end
+    end)
+
+    -- Carrega tema e keybind salvos
+    local HttpService = game:GetService("HttpService")
+    local savedTheme  = cfg.Theme or "Dark"
+    local savedKbName = "RightShift"
     pcall(function()
         if isfile and isfile(settingsFile) then
             local data = HttpService:JSONDecode(readfile(settingsFile))
@@ -1372,9 +1382,8 @@ function NexusUI:CreateWindow(config)
     gearBtn.MouseEnter:Connect(function() Tween(gearBtn,{ImageColor3=T.Text},0.1) end)
     gearBtn.MouseLeave:Connect(function() Tween(gearBtn,{ImageColor3=T.TextMuted},0.1) end)
 
-    -- ── Arquivo de configurações persistente ──────────────
-    local settingsFile = "NexusUI_Settings.json"
-    local HttpService  = game:GetService("HttpService")
+    -- ── Painel de configurações persistente ──────────────
+    -- settingsFile e HttpService já declarados acima no CreateWindow
 
     -- Carrega configurações salvas
     local savedSettings = { theme = themeName, keybind = "RightShift" }
