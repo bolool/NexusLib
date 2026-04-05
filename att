@@ -1321,11 +1321,10 @@ function NexusUI:CreateWindow(config)
 
     -- ── Arquivo de configurações persistente ──────────────
     local settingsFile = "NexusUI_Settings.json"
-    local HttpService = game:GetService("HttpService")
-    local settingsFile = "NexusUI_Settings.json"
+    local HttpService  = game:GetService("HttpService")
 
     -- Carrega configurações salvas
-    local savedSettings = { theme = themeName, keybind = "RightShift" }
+    local savedSettings = { theme = themeName, keybind = "RightShift", toggles = {} }
     pcall(function()
         if isfile and isfile(settingsFile) then
             local ok, data = pcall(function()
@@ -1334,28 +1333,14 @@ function NexusUI:CreateWindow(config)
             if ok and type(data) == "table" then
                 if type(data.theme)   == "string" and Themes[data.theme]   then savedSettings.theme   = data.theme   end
                 if type(data.keybind) == "string"                           then savedSettings.keybind = data.keybind end
+                if type(data.toggles) == "table"                            then savedSettings.toggles = data.toggles end
             end
         end
     end)
 
-    -- Aplica tema salvo ANTES de construir o painel (o tema correto já está em T acima)
-    -- O tema foi lido em savedSettings.theme — usado no CreateWindow para montar com a cor certa
-    -- (Para aplicar ao abrir: passe Theme = savedSettings.theme no CreateWindow)
-
     -- Tema pendente: qual o usuário selecionou mas ainda não salvou
     local pendingTheme = savedSettings.theme
     local currentKeybind = Enum.KeyCode[savedSettings.keybind] or Enum.KeyCode.RightShift
-
-    local function saveSettings()
-        pcall(function()
-            if writefile then
-                writefile(settingsFile, HttpService:JSONEncode({
-                    theme   = pendingTheme,
-                    keybind = tostring(currentKeybind.Name),
-                }))
-            end
-        end)
-    end
 
     -- ── Painel de Configurações ────────────────────────────
     local settingsOpen = false
@@ -1380,14 +1365,30 @@ function NexusUI:CreateWindow(config)
     settingsLayout.Padding   = UDim.new(0, 10)
     settingsLayout.Parent    = settingsContent
 
-    -- Título
+    -- Título + botão fechar
     do
+        local titleRow = Instance.new("Frame")
+        titleRow.BackgroundTransparency=1; titleRow.Size=UDim2.new(1,0,0,16)
+        titleRow.LayoutOrder=0; titleRow.Parent=settingsContent
+
         local stl = Instance.new("TextLabel")
-        stl.BackgroundTransparency=1; stl.Size=UDim2.new(1,0,0,16)
+        stl.BackgroundTransparency=1; stl.Size=UDim2.new(1,-20,1,0)
         stl.Text="Configurações"; stl.TextColor3=T.Text
         stl.TextSize=13; stl.Font=Enum.Font.GothamBold
-        stl.TextXAlignment=Enum.TextXAlignment.Left
-        stl.LayoutOrder=0; stl.Parent=settingsContent
+        stl.TextXAlignment=Enum.TextXAlignment.Left; stl.Parent=titleRow
+
+        local closeSettings = Instance.new("TextButton")
+        closeSettings.BackgroundTransparency=1
+        closeSettings.Size=UDim2.new(0,16,1,0); closeSettings.Position=UDim2.new(1,-16,0,0)
+        closeSettings.Text="X"; closeSettings.TextColor3=T.TextMuted
+        closeSettings.TextSize=11; closeSettings.Font=Enum.Font.GothamBold
+        closeSettings.Parent=titleRow
+        closeSettings.MouseEnter:Connect(function() Tween(closeSettings,{TextColor3=T.Error},0.1) end)
+        closeSettings.MouseLeave:Connect(function() Tween(closeSettings,{TextColor3=T.TextMuted},0.1) end)
+        closeSettings.MouseButton1Click:Connect(function()
+            settingsOpen=false; settingsOuter.Visible=false
+            Tween(gearBtn,{ImageColor3=T.TextMuted},0.15)
+        end)
     end
     do
         local div=Instance.new("Frame"); div.BackgroundColor3=T.Border
@@ -1513,7 +1514,7 @@ function NexusUI:CreateWindow(config)
 
     local saveLblBtn=Instance.new("TextLabel")
     saveLblBtn.BackgroundTransparency=1; saveLblBtn.Size=UDim2.new(1,0,1,0)
-    saveLblBtn.Text="Salvar configurações"; saveLblBtn.TextColor3=Color3.fromRGB(255,255,255)
+    saveLblBtn.Text="Salvar e aplicar"; saveLblBtn.TextColor3=Color3.fromRGB(255,255,255)
     saveLblBtn.TextSize=12; saveLblBtn.Font=Enum.Font.GothamBold
     saveLblBtn.Parent=saveInner
 
@@ -1522,12 +1523,35 @@ function NexusUI:CreateWindow(config)
     saveHit.MouseEnter:Connect(function() Tween(saveInner,{BackgroundColor3=T.AccentText},0.12) end)
     saveHit.MouseLeave:Connect(function() Tween(saveInner,{BackgroundColor3=T.Accent},0.12) end)
     saveHit.MouseButton1Click:Connect(function()
-        saveSettings()
-        saveLblBtn.Text="Salvo!"
-        Tween(saveInner,{BackgroundColor3=T.Success},0.15)
-        task.delay(1.5, function()
-            saveLblBtn.Text="Salvar configurações"
-            Tween(saveInner,{BackgroundColor3=T.Accent},0.2)
+        -- Coleta estado de todos os toggles
+        local toggleStates = {}
+        for _, reg in ipairs(Win._toggleRegistry) do
+            toggleStates[reg.id] = reg.get()
+        end
+
+        -- Salva tudo no arquivo
+        pcall(function()
+            if writefile then
+                writefile(settingsFile, HttpService:JSONEncode({
+                    theme   = pendingTheme,
+                    keybind = tostring(currentKeybind.Name),
+                    toggles = toggleStates,
+                }))
+            end
+        end)
+
+        saveLblBtn.Text = "Aplicando..."
+        Tween(saveInner, {BackgroundColor3=T.Success}, 0.15)
+
+        -- Aguarda feedback visual e recria a janela com o novo tema
+        task.delay(0.5, function()
+            -- Fecha e destrói janela e pill atuais
+            winOuter:Destroy()
+            pcall(function() pillOuter:Destroy() end)
+            -- Força o novo tema no cfg e recria (CreateWindow vai ler do arquivo)
+            local newCfg = cfg
+            newCfg.Theme = pendingTheme
+            NexusUI:CreateWindow(newCfg)
         end)
     end)
 
@@ -1642,6 +1666,7 @@ function NexusUI:CreateWindow(config)
     Win._subRow        = subRow
     Win._pillTagRow    = pillTagRow
     Win._tagCount      = 0
+    Win._toggleRegistry = {}   -- {id=string, get=fn, set=fn} para salvar/restaurar estados
 
     if showSearch and searchBox then
         local noResultsLbl = Instance.new("TextLabel")
@@ -2011,6 +2036,13 @@ function NexusUI:CreateWindow(config)
             local lbl     = cfg.Label    or "Toggle"
             local default = cfg.Default  or false
             local cb      = cfg.Callback or function() end
+
+            -- Restaura estado salvo se existir
+            local toggleId = lbl:lower():gsub("%s+","_")
+            if savedSettings.toggles and savedSettings.toggles[toggleId] ~= nil then
+                default = savedSettings.toggles[toggleId]
+            end
+
             local toggled = default
 
             local outer, inner = MakeRoundedFrame(scroll, T.Card, 6, T.CardBorder, 1)
@@ -2069,6 +2101,8 @@ function NexusUI:CreateWindow(config)
             function obj:Set(v) toggled=v; refresh() end
             function obj:Get() return toggled end
             table.insert(self._elements, {label=lbl:lower(), frame=outer})
+            -- Regista no Win para salvar estado
+            table.insert(Win._toggleRegistry, {id=toggleId, get=function() return toggled end})
             return obj
         end
 
