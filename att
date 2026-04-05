@@ -1540,18 +1540,20 @@ function NexusUI:CreateWindow(config)
             Tween(saveInner, {BackgroundColor3=T.Accent}, 0.2)
         end)
 
-        -- Notificação
+        -- Notificações individuais por mudança
         if pendingTheme ~= themeName then
             NexusUI:Notify({
-                Title    = "Configurações salvas",
-                Message  = "Tema \"" .. pendingTheme .. "\" será aplicado na próxima execução.",
+                Title    = "Tema alterado",
+                Message  = "\"" .. pendingTheme .. "\" será aplicado na próxima execução.",
                 Type     = "Info",
                 Duration = 4,
             })
-        else
+        end
+
+        if currentKeybind ~= (Enum.KeyCode[savedSettings.keybind] or Enum.KeyCode.RightShift) then
             NexusUI:Notify({
-                Title    = "Configurações salvas",
-                Message  = "Tecla: " .. currentKeybind.Name,
+                Title    = "Keybind alterada",
+                Message  = "Tecla para ocultar: " .. currentKeybind.Name,
                 Type     = "Success",
                 Duration = 3,
             })
@@ -2912,6 +2914,6 @@ function NexusUI:CreateWindow(config)
     end -- AddTab
 
     return Win
-end -- CreateWindowf
+end -- CreateWindowdsa
 
 return NexusUI
