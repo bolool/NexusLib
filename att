@@ -1310,8 +1310,8 @@ function NexusUI:CreateWindow(config)
     -- Botão de configurações (ícone de engrenagem via AssetId)
     local gearBtn = Instance.new("ImageButton")
     gearBtn.BackgroundTransparency = 1
-    gearBtn.Size                   = UDim2.new(0, 22, 0, 22)
-    gearBtn.Image                  = "rbxassetid://131611052381403"
+    gearBtn.Size                   = UDim2.new(0, 11, 0, 11)
+    gearBtn.Image                  = "rbxassetid://84420944520355"
     gearBtn.ImageColor3            = T.TextMuted
     gearBtn.ScaleType              = Enum.ScaleType.Fit
     gearBtn.LayoutOrder            = 3
@@ -1549,7 +1549,7 @@ function NexusUI:CreateWindow(config)
                 Title    = "Tema alterado",
                 Message  = "\"" .. pendingTheme .. "\" será aplicado na próxima execução.",
                 Type     = "Info",
-                Duration = 4,
+                Duration = 7,
             })
         end
 
@@ -2921,6 +2921,6 @@ function NexusUI:CreateWindow(config)
     end -- AddTab
 
     return Win
-end -- CreateWindowsdsss
+end -- CreateWindowsaaaaa
 
 return NexusUI
