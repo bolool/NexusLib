@@ -206,12 +206,69 @@ local function MakeDraggable(rootFrame, handle)
     end)
 end
 
+-- ── Lucide Icons ──────────────────────────────────────
+-- Carrega o arquivo de ícones do Rayfield (mesmo formato)
+local LucideIcons = nil
+task.spawn(function()
+    pcall(function()
+        local src = game:HttpGet("https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua")
+        if src and #src > 0 then
+            LucideIcons = loadstring(src)()
+        end
+    end)
+end)
+
+local function getLucideAsset(name)
+    if not LucideIcons then return nil end
+    name = tostring(name):lower():match("^%s*(.-)%s*$")
+    local sized = LucideIcons["48px"]
+    if not sized then return nil end
+    local r = sized[name]
+    if not r then return nil end
+    local rirs = r[2]; local riro = r[3]
+    if type(r[1]) ~= "number" or type(rirs) ~= "table" or type(riro) ~= "table" then return nil end
+    return {
+        id             = r[1],
+        imageRectSize  = Vector2.new(rirs[1], rirs[2]),
+        imageRectOffset= Vector2.new(riro[1], riro[2]),
+    }
+end
+
+-- Aplica ícone num ImageLabel/ImageButton (suporta Lucide name, assetid, ou número)
+local function applyIcon(imgObj, raw)
+    if not raw or raw == "" or raw == 0 then return end
+    local s = tostring(raw)
+    -- AssetId numérico ou string com rbxassetid://
+    if s:match("^%d+$") then
+        imgObj.Image = "rbxassetid://" .. s
+        return
+    end
+    if s:lower():find("^rbxassetid://") then
+        imgObj.Image = s
+        return
+    end
+    -- Tenta Lucide por nome (espera carregar se ainda não carregou)
+    local tries = 0
+    local function tryApply()
+        local asset = getLucideAsset(s)
+        if asset then
+            imgObj.Image           = "rbxassetid://" .. asset.id
+            imgObj.ImageRectSize   = asset.imageRectSize
+            imgObj.ImageRectOffset = asset.imageRectOffset
+        elseif tries < 20 then
+            tries = tries + 1
+            task.delay(0.3, tryApply)
+        end
+    end
+    tryApply()
+end
+
 local function resolveIcon(raw)
     if not raw or raw == "" then return nil end
     local s = tostring(raw)
     if s:lower():find("rbxassetid://") then return s end
     if s:match("^%d+$")               then return "rbxassetid://" .. s end
-    return s
+    return s  -- nome Lucide — tratado via applyIcon
 end
 
 local function destroyExisting()
@@ -765,11 +822,11 @@ function NexusUI:CreateWindow(config)
         end
     end
 
-    local title     = cfg.Title    or "NexusUI"
-    local subtitle  = cfg.SubTitle or ""
-    local winSize   = cfg.Size     or UDim2.new(0, 580, 0, 400)
-    local winPos    = cfg.Position or UDim2.new(0.5, -290, 0.5, -200)
-    local winIcon   = resolveIcon(cfg.Icon)
+    local title      = cfg.Title    or "NexusUI"
+    local subtitle   = cfg.SubTitle or ""
+    local winSize    = cfg.Size     or UDim2.new(0, 580, 0, 400)
+    local winPos     = cfg.Position or UDim2.new(0.5, -290, 0.5, -200)
+    local winIconRaw = cfg.Icon  -- guardamos o raw para applyIcon resolver Lucide
     local showSearch = cfg.SearchBox ~= false
 
     -- Carrega tema salvo (sobrescreve cfg.Theme se existir arquivo)
@@ -940,7 +997,7 @@ function NexusUI:CreateWindow(config)
         l.Parent            = pillContent
     end
 
-    if winIcon then
+    if winIconRaw then
         -- Outer: borda accent (UIStroke separado do clip, padrão MakeRoundedFrame)
         local iconOuter = Instance.new("Frame")
         iconOuter.BackgroundTransparency = 1
@@ -956,7 +1013,6 @@ function NexusUI:CreateWindow(config)
             s.Parent=iconOuter
         end
 
-        -- Inner: fundo com gradiente + clip
         local iconInner = Instance.new("Frame")
         iconInner.BackgroundColor3 = T.Card
         iconInner.Size             = UDim2.new(1,0,1,0)
@@ -965,7 +1021,6 @@ function NexusUI:CreateWindow(config)
         iconInner.Parent           = iconOuter
         do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,10); c.Parent=iconInner end
 
-        -- Gradiente sutil (tom do tema, claro → escuro)
         do
             local g=Instance.new("UIGradient")
             g.Rotation=135
@@ -976,14 +1031,13 @@ function NexusUI:CreateWindow(config)
             g.Parent=iconInner
         end
 
-        -- Imagem com UICorner próprio para garantir arredondamento
         local img = Instance.new("ImageLabel")
         img.BackgroundTransparency = 1
         img.Size      = UDim2.new(1, 0, 1, 0)
-        img.Image     = winIcon
         img.ScaleType = Enum.ScaleType.Crop
         img.Parent    = iconInner
         do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,10); c.Parent=img end
+        applyIcon(img, winIconRaw)
     else
         local ab = Instance.new("Frame")
         ab.BackgroundColor3 = T.Accent
@@ -1826,7 +1880,6 @@ function NexusUI:CreateWindow(config)
 
     function Win:AddTab(label, icon)
         local tab     = {}
-        local iconId  = resolveIcon(icon)
         local isFirst = (#self._tabs == 0)
 
         -- Botão sidebar
@@ -1848,18 +1901,18 @@ function NexusUI:CreateWindow(config)
         indicator.Parent                 = btn
         do local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,3); c.Parent=indicator end
 
-        -- Ícone (opcional)
+        -- Ícone (opcional) — suporta AssetId, número ou nome Lucide
         local iconImg
         local lblOffX = 10
-        if iconId then
+        if icon and icon ~= "" then
             iconImg = Instance.new("ImageLabel")
             iconImg.BackgroundTransparency = 1
             iconImg.Size        = UDim2.new(0, 15, 0, 15)
             iconImg.Position    = UDim2.new(0, 10, 0.5, -7)
-            iconImg.Image       = iconId
             iconImg.ImageColor3 = isFirst and T.Text or T.TextMuted
             iconImg.ScaleType   = Enum.ScaleType.Fit
             iconImg.Parent      = btn
+            applyIcon(iconImg, icon)
             lblOffX = 30
         end
 
@@ -2301,19 +2354,16 @@ function NexusUI:CreateWindow(config)
         end
 
         -- ────────────────────────────────────────
-        --  PARAGRAPH (bloco copiável)
+        --  PARAGRAPH (bloco copiável + highlight)
         -- ────────────────────────────────────────
         function tab:AddParagraph(cfg)
             cfg = cfg or {}
             local title   = cfg.Title   or ""
             local content = cfg.Content or ""
-            local isCode  = cfg.IsCode  ~= false  -- padrão true
+            local isCode  = cfg.IsCode  ~= false
 
-            -- Cores do bloco
-            local blockBg     = isCode and T.WinBg     or T.ContentBg
-            local blockBorder = isCode and T.Border     or T.CardBorder
-            local textColor   = isCode and T.AccentText or T.TextMuted
-            local textFont    = isCode and Enum.Font.Code or Enum.Font.Gotham
+            local blockBg   = isCode and T.WinBg    or T.ContentBg
+            local blockBord = isCode and T.Border    or T.CardBorder
 
             local outer, inner = MakeRoundedFrame(scroll, T.Card, 6, T.CardBorder, 1)
             outer.Size          = UDim2.new(1, 0, 0, 0)
@@ -2326,7 +2376,6 @@ function NexusUI:CreateWindow(config)
             lay.Padding   = UDim.new(0, 6)
             lay.Parent    = inner
 
-            -- Linha do título + botão copiar
             if title ~= "" then
                 local tRow = Instance.new("Frame")
                 tRow.BackgroundTransparency = 1
@@ -2344,21 +2393,18 @@ function NexusUI:CreateWindow(config)
                 tLbl.TextXAlignment = Enum.TextXAlignment.Left
                 tLbl.Parent         = tRow
 
-                -- Botão copiar com ícone
                 local copyBtn = Instance.new("ImageButton")
                 copyBtn.BackgroundTransparency = 1
-                copyBtn.Size       = UDim2.new(0, 16, 0, 16)
-                copyBtn.Position   = UDim2.new(1, -16, 0.5, -8)
-                copyBtn.Image      = "rbxassetid://98668805515783"
+                copyBtn.Size        = UDim2.new(0, 16, 0, 16)
+                copyBtn.Position    = UDim2.new(1, -16, 0.5, -8)
+                copyBtn.Image       = "rbxassetid://98668805515783"
                 copyBtn.ImageColor3 = T.TextMuted
-                copyBtn.ScaleType  = Enum.ScaleType.Fit
-                copyBtn.Parent     = tRow
-
+                copyBtn.ScaleType   = Enum.ScaleType.Fit
+                copyBtn.Parent      = tRow
                 copyBtn.MouseEnter:Connect(function() Tween(copyBtn,{ImageColor3=T.AccentText},0.1) end)
                 copyBtn.MouseLeave:Connect(function() Tween(copyBtn,{ImageColor3=T.TextMuted},0.1) end)
                 copyBtn.MouseButton1Click:Connect(function()
                     pcall(function() setclipboard(content) end)
-                    -- Animação: encolhe, fica verde, volta
                     Tween(copyBtn, {ImageColor3=T.Success}, 0.12)
                     Tween(copyBtn, {Size=UDim2.new(0,12,0,12), Position=UDim2.new(1,-14,0.5,-6)}, 0.1)
                     task.delay(0.1, function()
@@ -2367,14 +2413,19 @@ function NexusUI:CreateWindow(config)
                     task.delay(1.5, function()
                         Tween(copyBtn, {ImageColor3=T.TextMuted, Size=UDim2.new(0,16,0,16), Position=UDim2.new(1,-16,0.5,-8)}, 0.2)
                     end)
+                    NexusUI:Notify({
+                        Title    = "Copiado!",
+                        Message  = '"' .. title .. '" copiado para a área de transferência.',
+                        Type     = "Success",
+                        Duration = 2,
+                    })
                 end)
             end
 
-            -- Bloco de código/texto
-            local codeOuter, codeInner = MakeRoundedFrame(inner, blockBg, 4, blockBorder, 1)
-            codeOuter.Size        = UDim2.new(1, 0, 0, 0)
+            local codeOuter, codeInner = MakeRoundedFrame(inner, blockBg, 4, blockBord, 1)
+            codeOuter.Size          = UDim2.new(1, 0, 0, 0)
             codeOuter.AutomaticSize = Enum.AutomaticSize.Y
-            codeOuter.LayoutOrder = 2
+            codeOuter.LayoutOrder   = 2
             codeInner.AutomaticSize = Enum.AutomaticSize.Y
             AddPadding(codeInner, 8, 8, 10, 10)
 
@@ -2382,13 +2433,100 @@ function NexusUI:CreateWindow(config)
             cLbl.BackgroundTransparency = 1
             cLbl.Size           = UDim2.new(1, 0, 0, 0)
             cLbl.AutomaticSize  = Enum.AutomaticSize.Y
-            cLbl.Text           = content
-            cLbl.TextColor3     = textColor
-            cLbl.TextSize       = 11
-            cLbl.Font           = textFont
             cLbl.TextXAlignment = Enum.TextXAlignment.Left
             cLbl.TextWrapped    = true
+            cLbl.TextSize       = 11
+            cLbl.Font           = isCode and Enum.Font.Code or Enum.Font.Gotham
             cLbl.Parent         = codeInner
+
+            if isCode then
+                cLbl.RichText   = true
+                cLbl.TextColor3 = T.TextMuted
+
+                local cKw  = "c084fc"  -- keywords: roxo
+                local cStr = "86efac"  -- strings:  verde
+                local cNum = "fb923c"  -- números:  laranja
+                local cFn  = "60a5fa"  -- builtins: azul
+                local cCmt = "6b7280"  -- comments: cinza
+                local cBool= "f87171"  -- bool/nil: vermelho
+
+                local kwSet = {
+                    ["local"]=1,["function"]=1,["end"]=1,["if"]=1,["then"]=1,
+                    ["else"]=1,["elseif"]=1,["for"]=1,["while"]=1,["do"]=1,
+                    ["return"]=1,["in"]=1,["not"]=1,["and"]=1,["or"]=1,
+                    ["repeat"]=1,["until"]=1,["break"]=1,["continue"]=1,
+                }
+                local fnSet = {
+                    ["print"]=1,["warn"]=1,["error"]=1,["pairs"]=1,["ipairs"]=1,
+                    ["next"]=1,["tostring"]=1,["tonumber"]=1,["type"]=1,
+                    ["math"]=1,["table"]=1,["string"]=1,["task"]=1,
+                    ["game"]=1,["workspace"]=1,["script"]=1,["pcall"]=1,
+                }
+
+                local function esc(s)
+                    return s:gsub("&","&amp;"):gsub("<","&lt;"):gsub(">","&gt;"):gsub('"',"&quot;")
+                end
+
+                local function highlight(src)
+                    local lines = {}
+                    for line in (src.."\n"):gmatch("([^\n]*)\n") do
+                        -- Linha de comentário
+                        if line:match("^%s*%-%-") then
+                            table.insert(lines, '<font color="#'..cCmt..'">'..esc(line)..'</font>')
+                        else
+                            local res = ""
+                            local i = 1
+                            while i <= #line do
+                                local c = line:sub(i,i)
+                                -- Inline comment
+                                if line:sub(i,i+1) == "--" then
+                                    res = res..'<font color="#'..cCmt..'">'..esc(line:sub(i))..'</font>'
+                                    break
+                                -- String dupla
+                                elseif c == '"' or c == "'" then
+                                    local j = i+1
+                                    while j <= #line do
+                                        if line:sub(j,j) == c and line:sub(j-1,j-1) ~= "\\" then break end
+                                        j = j+1
+                                    end
+                                    local tok = line:sub(i,j)
+                                    res = res..'<font color="#'..cStr..'">'..esc(tok)..'</font>'
+                                    i = j+1
+                                -- Número
+                                elseif c:match("%d") then
+                                    local tok = line:sub(i):match("^%d+%.?%d*")
+                                    res = res..'<font color="#'..cNum..'">'..esc(tok)..'</font>'
+                                    i = i+#tok
+                                -- Palavra
+                                elseif c:match("[%a_]") then
+                                    local tok = line:sub(i):match("^[%a_%d]+")
+                                    if tok == "true" or tok == "false" or tok == "nil" then
+                                        res = res..'<font color="#'..cBool..'">'..esc(tok)..'</font>'
+                                    elseif kwSet[tok] then
+                                        res = res..'<font color="#'..cKw..'">'..esc(tok)..'</font>'
+                                    elseif fnSet[tok] then
+                                        res = res..'<font color="#'..cFn..'">'..esc(tok)..'</font>'
+                                    else
+                                        res = res..esc(tok)
+                                    end
+                                    i = i+#tok
+                                else
+                                    res = res..esc(c)
+                                    i = i+1
+                                end
+                            end
+                            table.insert(lines, res)
+                        end
+                    end
+                    return table.concat(lines, "\n")
+                end
+
+                cLbl.Text = highlight(content)
+            else
+                cLbl.RichText   = false
+                cLbl.Text       = content
+                cLbl.TextColor3 = T.TextMuted
+            end
 
             table.insert(self._elements, {label=(title..content):lower(), frame=outer})
             return outer
@@ -2959,6 +3097,6 @@ function NexusUI:CreateWindow(config)
     end -- AddTab
 
     return Win
-end -- CreateWindow
+end -- CreateWindowda
 
 return NexusUI
