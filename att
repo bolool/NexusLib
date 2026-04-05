@@ -394,6 +394,21 @@ function NexusUI:CreateWindow(config)
     local keyEnabled = cfg.KeySystem == true
     local keySettings = cfg.KeySettings or {}
 
+    -- Lê configurações salvas ANTES de construir a janela
+    -- Isso permite aplicar o tema correto desde o início
+    local _hs = game:GetService("HttpService")
+    local _sf = "NexusUI_Settings.json"
+    pcall(function()
+        if isfile and isfile(_sf) then
+            local ok, data = pcall(function() return _hs:JSONDecode(readfile(_sf)) end)
+            if ok and type(data) == "table" then
+                if type(data.theme) == "string" and Themes[data.theme] and not cfg.Theme then
+                    cfg.Theme = data.theme
+                end
+            end
+        end
+    end)
+
     -- Se KeySystem estiver ativo, mostra a tela de key antes de tudo
     if keyEnabled then
         local ks         = keySettings
@@ -752,11 +767,25 @@ function NexusUI:CreateWindow(config)
 
     local title     = cfg.Title    or "NexusUI"
     local subtitle  = cfg.SubTitle or ""
-    local themeName = cfg.Theme    or "Dark"
     local winSize   = cfg.Size     or UDim2.new(0, 580, 0, 400)
     local winPos    = cfg.Position or UDim2.new(0.5, -290, 0.5, -200)
     local winIcon   = resolveIcon(cfg.Icon)
-    local showSearch = cfg.SearchBox ~= false   -- padrão true, false desativa
+    local showSearch = cfg.SearchBox ~= false
+
+    -- Carrega tema salvo (sobrescreve cfg.Theme se existir arquivo)
+    local settingsFile = "NexusUI_Settings.json"
+    local HttpService  = game:GetService("HttpService")
+    local savedTheme   = cfg.Theme or "Dark"
+    local savedKbName  = "RightShift"
+    pcall(function()
+        if isfile and isfile(settingsFile) then
+            local data = HttpService:JSONDecode(readfile(settingsFile))
+            if data and data.theme   and Themes[data.theme]   then savedTheme  = data.theme   end
+            if data and data.keybind and data.keybind ~= ""   then savedKbName = data.keybind end
+        end
+    end)
+
+    local themeName = savedTheme
     local T         = Themes[themeName] or Themes.Dark
 
     -- Detecta se o SubTitle contém NexusUI.Version (via concatenação)
@@ -1292,56 +1321,40 @@ function NexusUI:CreateWindow(config)
 
     -- ── Arquivo de configurações persistente ──────────────
     local settingsFile = "NexusUI_Settings.json"
-    local HttpService  = game:GetService("HttpService")
+    local HttpService = game:GetService("HttpService")
+    local settingsFile = "NexusUI_Settings.json"
 
+    -- Carrega configurações salvas
     local savedSettings = { theme = themeName, keybind = "RightShift" }
     pcall(function()
         if isfile and isfile(settingsFile) then
-            local data = HttpService:JSONDecode(readfile(settingsFile))
-            if data.theme   then savedSettings.theme   = data.theme   end
-            if data.keybind then savedSettings.keybind = data.keybind end
+            local ok, data = pcall(function()
+                return HttpService:JSONDecode(readfile(settingsFile))
+            end)
+            if ok and type(data) == "table" then
+                if type(data.theme)   == "string" and Themes[data.theme]   then savedSettings.theme   = data.theme   end
+                if type(data.keybind) == "string"                           then savedSettings.keybind = data.keybind end
+            end
         end
     end)
+
+    -- Aplica tema salvo ANTES de construir o painel (o tema correto já está em T acima)
+    -- O tema foi lido em savedSettings.theme — usado no CreateWindow para montar com a cor certa
+    -- (Para aplicar ao abrir: passe Theme = savedSettings.theme no CreateWindow)
+
+    -- Tema pendente: qual o usuário selecionou mas ainda não salvou
+    local pendingTheme = savedSettings.theme
+    local currentKeybind = Enum.KeyCode[savedSettings.keybind] or Enum.KeyCode.RightShift
 
     local function saveSettings()
         pcall(function()
             if writefile then
                 writefile(settingsFile, HttpService:JSONEncode({
-                    theme   = themeName,
-                    keybind = tostring(currentKeybind and currentKeybind.Name or "RightShift"),
+                    theme   = pendingTheme,
+                    keybind = tostring(currentKeybind.Name),
                 }))
             end
         end)
-    end
-
-    -- ── Registro de elementos para mudança de tema ao vivo ──
-    -- Armazena {objeto, propriedade, chave do tema}
-    local themeReg = {}
-    local function TR(obj, prop, key)
-        table.insert(themeReg, {obj=obj, prop=prop, key=key})
-    end
-
-    -- Registra os elementos estruturais principais
-    TR(winInner,     "BackgroundColor3", "WinBg")
-    TR(titleBar,     "BackgroundColor3", "TitleBg")
-    TR(sidebar,      "BackgroundColor3", "SidebarBg")
-    TR(contentArea,  "BackgroundColor3", "ContentBg")
-    TR(settingsInner,"BackgroundColor3", "WinBg")
-
-    local function applyThemeLive(newName)
-        local NT = Themes[newName]
-        if not NT then return end
-        themeName = newName
-        T         = NT
-        -- Tween todos os elementos registrados
-        for _, r in ipairs(themeReg) do
-            pcall(function() Tween(r.obj, {[r.prop] = NT[r.key]}, 0.28) end)
-        end
-    end
-
-    -- Aplica tema salvo se diferente do padrão
-    if savedSettings.theme ~= themeName then
-        applyThemeLive(savedSettings.theme)
     end
 
     -- ── Painel de Configurações ────────────────────────────
@@ -1391,8 +1404,9 @@ function NexusUI:CreateWindow(config)
         lbl.LayoutOrder=2; lbl.Parent=settingsContent
     end
 
-    local themeOptions  = {"Dark","Light","Acrylic","Rose"}
+    local themeOptions   = {"Dark","Light","Acrylic","Rose"}
     local themeBtnInners = {}
+    local pendingThemeLbls = {}  -- labels dos botões para atualizar visual
 
     local themeRow = Instance.new("Frame")
     themeRow.BackgroundTransparency=1; themeRow.Size=UDim2.new(1,0,0,26)
@@ -1403,7 +1417,7 @@ function NexusUI:CreateWindow(config)
     end
 
     for i, tname in ipairs(themeOptions) do
-        local isActive = (tname == themeName)
+        local isActive = (tname == pendingTheme)
         local tOuter, tInner = MakeRoundedFrame(themeRow,
             isActive and T.TabActiveBg or T.Card, 5,
             isActive and T.Accent      or T.CardBorder, 1)
@@ -1414,28 +1428,23 @@ function NexusUI:CreateWindow(config)
         tLbl.Size=UDim2.new(1,0,1,0); tLbl.Text=tname
         tLbl.TextColor3=isActive and T.AccentText or T.TextMuted
         tLbl.TextSize=9; tLbl.Font=Enum.Font.GothamBold; tLbl.Parent=tInner
+        pendingThemeLbls[tname] = tLbl
 
         local tHit=Instance.new("TextButton"); tHit.BackgroundTransparency=1
         tHit.Size=UDim2.new(1,0,1,0); tHit.Text=""; tHit.Parent=tInner
 
         tHit.MouseButton1Click:Connect(function()
-            -- Reset visual de todos os botões
-            for _, entry in pairs(themeBtnInners) do
-                Tween(entry.inner, {BackgroundColor3=T.Card}, 0.15)
+            pendingTheme = tname
+            -- Atualiza visual de todos os botões
+            for _, tn in ipairs(themeOptions) do
+                local entry = themeBtnInners[tn]
+                local active = (tn == pendingTheme)
+                Tween(entry.inner, {BackgroundColor3 = active and T.TabActiveBg or T.Card}, 0.15)
                 local s = entry.outer:FindFirstChildOfClass("UIStroke")
-                if s then Tween(s, {Color=T.CardBorder}, 0.15) end
-                local lb = entry.inner:FindFirstChildOfClass("TextLabel")
-                if lb then lb.TextColor3=T.TextMuted end
-            end
-            -- Aplica ao vivo
-            applyThemeLive(tname)
-            -- Destaca botão ativo
-            local NT = Themes[tname]
-            if NT then
-                Tween(tInner, {BackgroundColor3=NT.TabActiveBg}, 0.15)
-                local s = tOuter:FindFirstChildOfClass("UIStroke")
-                if s then Tween(s, {Color=NT.Accent}, 0.15) end
-                if tLbl then tLbl.TextColor3=NT.AccentText end
+                if s then Tween(s, {Color = active and T.Accent or T.CardBorder}, 0.15) end
+                if pendingThemeLbls[tn] then
+                    pendingThemeLbls[tn].TextColor3 = active and T.AccentText or T.TextMuted
+                end
             end
         end)
     end
@@ -1455,17 +1464,13 @@ function NexusUI:CreateWindow(config)
         lbl.LayoutOrder=5; lbl.Parent=settingsContent
     end
 
-    -- Carrega keybind salvo
-    local savedKbName = savedSettings.keybind or "RightShift"
-    local currentKeybind = (Enum.KeyCode[savedKbName] or Enum.KeyCode.RightShift)
-    local listeningKey   = false
-
     local kbOuter, kbInner = MakeRoundedFrame(settingsContent, T.Card, 5, T.CardBorder, 1)
     kbOuter.Size=UDim2.new(1,0,0,26); kbOuter.LayoutOrder=6
 
     local kbLblVal = Instance.new("TextLabel")
     kbLblVal.BackgroundTransparency=1; kbLblVal.Size=UDim2.new(1,-8,1,0)
-    kbLblVal.Position=UDim2.new(0,8,0,0); kbLblVal.Text=currentKeybind.Name
+    kbLblVal.Position=UDim2.new(0,8,0,0)
+    kbLblVal.Text=currentKeybind.Name
     kbLblVal.TextColor3=T.AccentText; kbLblVal.TextSize=11
     kbLblVal.Font=Enum.Font.GothamBold; kbLblVal.TextXAlignment=Enum.TextXAlignment.Left
     kbLblVal.Parent=kbInner
@@ -1473,6 +1478,7 @@ function NexusUI:CreateWindow(config)
     local kbHit=Instance.new("TextButton"); kbHit.BackgroundTransparency=1
     kbHit.Size=UDim2.new(1,0,1,0); kbHit.Text=""; kbHit.Parent=kbInner
     local kbStroke=kbOuter:FindFirstChildOfClass("UIStroke")
+    local listeningKey = false
 
     kbHit.MouseButton1Click:Connect(function()
         listeningKey=true; kbLblVal.Text="..."
@@ -2874,6 +2880,6 @@ function NexusUI:CreateWindow(config)
     end -- AddTab
 
     return Win
-end -- CreateWindow
+end -- CreateWindoww
 
 return NexusUI
