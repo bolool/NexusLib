@@ -1,6 +1,7 @@
+-- 1111
 local NexusUI  = {}
 NexusUI.__index = NexusUI
-NexusUI.Version = "v1.0.0"  -- Atualize aqui para mudar em toda a lib
+NexusUI.Version = "v2.0.0"  -- Atualize aqui para mudar em toda a lib
 
 local Players          = game:GetService("Players")
 local TweenService     = game:GetService("TweenService")
@@ -254,100 +255,140 @@ function NexusUI:Notify(config)
     local message  = cfg.Message  or ""
     local duration = cfg.Duration or 4
     local ntype    = cfg.Type     or "Info"
-    -- Respeita o tema: "Dark" ou "Light"
     local T        = Themes[cfg.Theme or "Dark"] or Themes.Dark
 
     local typeColor = { Info=T.Info, Success=T.Success, Warning=T.Warning, Error=T.Error }
     local accent    = typeColor[ntype] or T.Info
 
-    -- outer/inner: sem vazar cantos
-    local notifOuter, notifInner = MakeRoundedFrame(
-        NotifContainer,
-        T.TitleBg,
-        8,
-        T.Border,
-        1
-    )
-    notifOuter.Size = UDim2.new(1, 0, 0, 66)
+    -- Outer: stroke + corner sem clip
+    local notifOuter = Instance.new("Frame")
+    notifOuter.BackgroundTransparency = 1
+    notifOuter.Size                   = UDim2.new(1, 0, 0, 0)
+    notifOuter.AutomaticSize          = Enum.AutomaticSize.Y
+    notifOuter.BorderSizePixel        = 0
+    notifOuter.Parent                 = NotifContainer
 
-    -- Barra accent lateral (UICorner apenas uma vez)
+    do
+        local c = Instance.new("UICorner")
+        c.CornerRadius = UDim.new(0, 8)
+        c.Parent = notifOuter
+    end
+    do
+        local s = Instance.new("UIStroke")
+        s.Color           = T.Border
+        s.Thickness       = 1
+        s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        s.Parent          = notifOuter
+    end
+
+    -- Inner: cor de fundo + clip + corner (sem stroke)
+    local notifInner = Instance.new("Frame")
+    notifInner.BackgroundColor3 = T.TitleBg
+    notifInner.BorderSizePixel  = 0
+    notifInner.Size             = UDim2.new(1, 0, 0, 0)
+    notifInner.AutomaticSize    = Enum.AutomaticSize.Y
+    notifInner.ClipsDescendants = true
+    notifInner.Parent           = notifOuter
+
+    do
+        local c = Instance.new("UICorner")
+        c.CornerRadius = UDim.new(0, 8)
+        c.Parent = notifInner
+    end
+
+    -- Barra accent lateral (sem UICorner — o clip do inner já cuida dos cantos)
     local bar = Instance.new("Frame")
     bar.BackgroundColor3 = accent
     bar.Size             = UDim2.new(0, 3, 1, 0)
     bar.BorderSizePixel  = 0
     bar.Parent           = notifInner
-    do local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 3); c.Parent = bar end
 
+    -- Área de conteúdo (fica ao lado da barra)
     local content = Instance.new("Frame")
     content.BackgroundTransparency = 1
-    content.Size     = UDim2.new(1, -14, 1, 0)
-    content.Position = UDim2.new(0, 12, 0, 0)
-    content.Parent   = notifInner
-    AddPadding(content, 10, 8, 6, 10)
+    content.BorderSizePixel        = 0
+    content.Size                   = UDim2.new(1, -3, 0, 0)
+    content.Position               = UDim2.new(0, 3, 0, 0)
+    content.AutomaticSize          = Enum.AutomaticSize.Y
+    content.Parent                 = notifInner
+    AddPadding(content, 10, 10, 12, 12)
 
-    local icons = {Info="ℹ", Success="✓", Warning="⚠", Error="✕"}
-    do
-        local il = Instance.new("TextLabel")
-        il.BackgroundTransparency = 1
-        il.Size       = UDim2.new(0,18,0,18)
-        il.Position   = UDim2.new(0,0,0,1)
-        il.Text       = icons[ntype] or "ℹ"
-        il.TextColor3 = accent
-        il.TextSize   = 14
-        il.Font       = Enum.Font.GothamBold
-        il.Parent     = content
+    local contentLayout = Instance.new("UIListLayout")
+    contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    contentLayout.Padding   = UDim.new(0, 3)
+    contentLayout.Parent    = content
+
+    -- Linha do título (ícone + texto)
+    local titleRow = Instance.new("Frame")
+    titleRow.BackgroundTransparency = 1
+    titleRow.BorderSizePixel        = 0
+    titleRow.Size                   = UDim2.new(1, 0, 0, 16)
+    titleRow.LayoutOrder            = 1
+    titleRow.Parent                 = content
+
+    local icons = { Info = "i", Success = "v", Warning = "!", Error = "x" }
+    local iconLbl = Instance.new("TextLabel")
+    iconLbl.BackgroundTransparency = 1
+    iconLbl.Size       = UDim2.new(0, 16, 1, 0)
+    iconLbl.Text       = icons[ntype] or "i"
+    iconLbl.TextColor3 = accent
+    iconLbl.TextSize   = 11
+    iconLbl.Font       = Enum.Font.GothamBold
+    iconLbl.Parent     = titleRow
+
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Size             = UDim2.new(1, -20, 1, 0)
+    titleLbl.Position         = UDim2.new(0, 20, 0, 0)
+    titleLbl.Text             = title
+    titleLbl.TextColor3       = T.Text
+    titleLbl.TextSize         = 13
+    titleLbl.Font             = Enum.Font.GothamBold
+    titleLbl.TextXAlignment   = Enum.TextXAlignment.Left
+    titleLbl.TextTruncate     = Enum.TextTruncate.AtEnd
+    titleLbl.Parent           = titleRow
+
+    -- Mensagem (só aparece se não estiver vazia)
+    if message ~= "" then
+        local msgLbl = Instance.new("TextLabel")
+        msgLbl.BackgroundTransparency = 1
+        msgLbl.Size             = UDim2.new(1, 0, 0, 0)
+        msgLbl.AutomaticSize    = Enum.AutomaticSize.Y
+        msgLbl.Text             = message
+        msgLbl.TextColor3       = T.TextMuted
+        msgLbl.TextSize         = 12
+        msgLbl.Font             = Enum.Font.Gotham
+        msgLbl.TextXAlignment   = Enum.TextXAlignment.Left
+        msgLbl.TextWrapped      = true
+        msgLbl.LayoutOrder      = 2
+        msgLbl.Parent           = content
     end
 
-    do
-        local tl = Instance.new("TextLabel")
-        tl.BackgroundTransparency = 1
-        tl.Size           = UDim2.new(1,-24,0,18)
-        tl.Position       = UDim2.new(0,24,0,0)
-        tl.Text           = title
-        tl.TextColor3     = T.Text
-        tl.TextSize       = 13
-        tl.Font           = Enum.Font.GothamBold
-        tl.TextXAlignment = Enum.TextXAlignment.Left
-        tl.Parent         = content
-    end
-
-    do
-        local ml = Instance.new("TextLabel")
-        ml.BackgroundTransparency = 1
-        ml.Size           = UDim2.new(1,0,0,0)
-        ml.Position       = UDim2.new(0,0,0,22)
-        ml.AutomaticSize  = Enum.AutomaticSize.Y
-        ml.Text           = message
-        ml.TextColor3     = T.TextMuted
-        ml.TextSize       = 12
-        ml.Font           = Enum.Font.Gotham
-        ml.TextXAlignment = Enum.TextXAlignment.Left
-        ml.TextWrapped    = true
-        ml.Parent         = content
-    end
-
-    -- Barra de progresso (sem cantos bugados: é dentro do inner já clipado)
-    local pgBg = Instance.new("Frame")
-    pgBg.BackgroundColor3 = T.Border
-    pgBg.Size             = UDim2.new(1, 0, 0, 2)
-    pgBg.Position         = UDim2.new(0, 0, 1, -2)
-    pgBg.BorderSizePixel  = 0
-    pgBg.Parent           = notifInner
+    -- Barra de progresso (fora do content, cola no fundo do inner)
+    local pgTrack = Instance.new("Frame")
+    pgTrack.BackgroundColor3 = T.BorderSubtle
+    pgTrack.BorderSizePixel  = 0
+    pgTrack.Size             = UDim2.new(1, 0, 0, 2)
+    pgTrack.LayoutOrder      = 3
+    pgTrack.Parent           = content
 
     local pgFill = Instance.new("Frame")
     pgFill.BackgroundColor3 = accent
-    pgFill.Size             = UDim2.new(1, 0, 1, 0)
     pgFill.BorderSizePixel  = 0
-    pgFill.Parent           = pgBg
+    pgFill.Size             = UDim2.new(1, 0, 1, 0)
+    pgFill.Parent           = pgTrack
 
-    -- Slide-in
-    notifOuter.Position = UDim2.new(0.1, 0, 0, 0)
-    Tween(notifOuter, {Position = UDim2.new(0, 0, 0, 0)}, 0.26)
-    Tween(pgFill, {Size = UDim2.new(0, 0, 1, 0)}, duration, Enum.EasingStyle.Linear)
+    -- Animação de entrada (slide da direita)
+    notifOuter.Position = UDim2.new(0.08, 0, 0, 0)
+    Tween(notifOuter, { Position = UDim2.new(0, 0, 0, 0) }, 0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
+    -- Progress
+    Tween(pgFill, { Size = UDim2.new(0, 0, 1, 0) }, duration, Enum.EasingStyle.Linear)
+
+    -- Saída
     task.delay(duration, function()
-        Tween(notifOuter, {Position = UDim2.new(0.1, 0, 0, 0)}, 0.22)
-        task.wait(0.26)
+        Tween(notifOuter, { Position = UDim2.new(0.08, 0, 0, 0) }, 0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+        task.wait(0.24)
         notifOuter:Destroy()
     end)
 
