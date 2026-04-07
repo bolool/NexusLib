@@ -1578,7 +1578,13 @@ function NexusUI:CreateWindow(config)
             if kbStroke then Tween(kbStroke,{Color=T.CardBorder},0.15) end
         elseif not listeningKey and inp.UserInputType==Enum.UserInputType.Keyboard then
             if inp.KeyCode==currentKeybind then
-                winOuter.Visible=not winOuter.Visible
+                -- Se está minimizado: mostra/oculta o pill
+                -- Se está normal: mostra/oculta a janela
+                if minimized then
+                    pillOuter.Visible = not pillOuter.Visible
+                else
+                    winOuter.Visible = not winOuter.Visible
+                end
             end
         end
     end)
@@ -3162,6 +3168,6 @@ function NexusUI:CreateWindow(config)
     end -- AddTab
 
     return Win
-end -- CreateWindowaf
+end -- CreateWindow222
 
 return NexusUI
