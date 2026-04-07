@@ -181,10 +181,12 @@ local function AddPadding(parent, top, bottom, left, right)
 end
 
 local function MakeDraggable(rootFrame, handle)
-    local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
+    local dragging, dragStart, startPos = false, nil, nil
     handle = handle or rootFrame
-    handle.InputBegan:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+
+    local function onStart(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1
+        or inp.UserInputType == Enum.UserInputType.Touch then
             dragging  = true
             dragStart = inp.Position
             startPos  = rootFrame.Position
@@ -192,16 +194,25 @@ local function MakeDraggable(rootFrame, handle)
                 if inp.UserInputState == Enum.UserInputState.End then dragging = false end
             end)
         end
-    end)
-    handle.InputChanged:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.MouseMovement then dragInput = inp end
-    end)
+    end
+
+    handle.InputBegan:Connect(onStart)
+
     UserInputService.InputChanged:Connect(function(inp)
-        if inp == dragInput and dragging then
+        if not dragging then return end
+        if inp.UserInputType == Enum.UserInputType.MouseMovement
+        or inp.UserInputType == Enum.UserInputType.Touch then
             local d = inp.Position - dragStart
             rootFrame.Position = UDim2.new(
                 startPos.X.Scale, startPos.X.Offset + d.X,
                 startPos.Y.Scale, startPos.Y.Offset + d.Y)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1
+        or inp.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
         end
     end)
 end
@@ -3151,6 +3162,6 @@ function NexusUI:CreateWindow(config)
     end -- AddTab
 
     return Win
-end -- CreateWindoww
+end -- CreateWindowaf
 
 return NexusUI
